@@ -1,11 +1,13 @@
 import { AppProviders } from "./providers";
+import AppRouter from "../routes/AppRouter";
+
 
 function App() {
-  return (
-    <AppProviders>
-      <h1>CDIS Engineering Template</h1>
-    </AppProviders>
-  );
+    return (
+        <AppProviders>
+            <AppRouter />
+        </AppProviders>
+    );
 }
 
 export default App;
