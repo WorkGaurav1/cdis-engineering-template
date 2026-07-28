@@ -1,41 +1,19 @@
-/**
- * -----------------------------------------------------------------------------
- * File: publicRoutes.tsx
- * -----------------------------------------------------------------------------
- * Purpose:
- * Defines all publicly accessible application routes.
- *
- * Responsibilities:
- * - Configure route objects for pages that do not require authentication.
- * - Map route paths to feature pages.
- *
- * Not Responsible For:
- * - Creating the application router.
- * - Authentication or authorization.
- * - Route guards.
- * - Layout composition.
- *
- * Used By:
- * - AppRouter
- * -----------------------------------------------------------------------------
- */
+import { Navigate, type RouteObject } from "react-router-dom";
 
-// -----------------------------------------------------------------------------
-// External Imports
-// -----------------------------------------------------------------------------
-
-import type { RouteObject } from "react-router-dom";
-
-import { PublicLayout } from "../layouts";
 import { LoginPage } from "../features/auth";
-import { ROUTES } from "./routeConfig";
+import { PublicLayout } from "../layouts";
+import { ROUTE_SEGMENTS, ROUTES } from "./routeConfig";
 
 export const publicRoutes: RouteObject[] = [
+    {
+        path: ROUTES.HOME,
+        element: <Navigate to={ROUTES.LOGIN} replace />,
+    },
     {
         element: <PublicLayout />,
         children: [
             {
-                path: ROUTES.LOGIN,
+                path: ROUTE_SEGMENTS.LOGIN,
                 element: <LoginPage />,
             },
         ],
