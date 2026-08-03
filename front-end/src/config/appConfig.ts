@@ -5,4 +5,9 @@ export const appConfig = {
     name: env.appName,
     environment: env.appEnv,
   },
+
+  api: {
+    baseUrl: "/api",
+    timeout: 30000,
+  },
 } as const;

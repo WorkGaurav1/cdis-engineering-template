@@ -1,6 +1,6 @@
 import { Navigate, type RouteObject } from "react-router-dom";
 
-import { LoginPage } from "../features/auth";
+import { LoginPage } from "@/auth";
 import { PublicLayout } from "../layouts";
 import { ROUTE_SEGMENTS, ROUTES } from "./routeConfig";
 
