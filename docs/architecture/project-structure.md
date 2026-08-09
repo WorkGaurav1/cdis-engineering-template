@@ -12,16 +12,16 @@ Where code lives today, so new code goes to the same place.
 
 ## Location
 
-```
+
 .
 ├── front-end/
 ├── back-end/
 ├── docs/
 ├── docker-compose.yml   # MySQL dev container only
 └── README.md
-```
 
-No root `package.json` / workspace — `front-end` and `back-end` are installed and run independently.
+
+
 
 ---
 

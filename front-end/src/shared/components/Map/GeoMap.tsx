@@ -63,6 +63,20 @@ interface GeoMapProps {
   overlays?: Partial<Record<"topLeft" | "topRight" | "bottomLeft" | "bottomRight", ReactNode>>;
   /** Auto-fit the view to the combined bounds of every layer once data is available, overriding center/zoom. */
   fitToData?: boolean;
+  /**
+   * Masks everything outside a given shape — e.g. a "world rectangle
+   * with country X cut out as a hole" polygon — so only that region is
+   * visible, and (optionally) restricts panning/zooming to match. No
+   * knowledge of what the shape represents lives here; the caller
+   * supplies the mask geometry.
+   */
+  maskOutside?: {
+    data: FeatureCollection;
+    /** Defaults to white — should match the page/card background it sits on. */
+    color?: string;
+    maxBounds?: [[number, number], [number, number]];
+    minZoom?: number;
+  };
 }
 
 const OVERLAY_POSITION_CLASSES: Record<string, string> = {
@@ -284,6 +298,7 @@ export function GeoMap({
   isLoading = false,
   overlays,
   fitToData = false,
+  maskOutside,
 }: GeoMapProps) {
   const isEmpty = markers.length === 0 && regionLayers.length === 0 && routeLayers.length === 0;
   const homeViewRef = useRef<HomeView | null>(null);
@@ -306,12 +321,23 @@ export function GeoMap({
           // land close to the actual best fit.
           zoomSnap={0.25}
           zoomDelta={0.25}
+          maxBounds={maskOutside?.maxBounds}
+          maxBoundsViscosity={maskOutside ? 1 : undefined}
+          minZoom={maskOutside?.minZoom}
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          {maskOutside && (
+            <GeoJSON
+              data={maskOutside.data}
+              interactive={false}
+              style={{ fillColor: maskOutside.color ?? "#ffffff", fillOpacity: 1, stroke: false }}
+            />
+          )}
 
           <MapControls homeViewRef={homeViewRef} fallbackCenter={center} fallbackZoom={zoom} />
 
