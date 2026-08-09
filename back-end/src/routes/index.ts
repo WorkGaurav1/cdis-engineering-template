@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { authRouter } from "./auth.routes.js";
+import { demoRouter } from "./demo.routes.js";
 import { userRouter } from "./user.routes.js";
 
 /**
@@ -15,3 +16,4 @@ export const apiV1Router = Router();
 
 apiV1Router.use("/auth", authRouter);
 apiV1Router.use("/users", userRouter);
+apiV1Router.use("/demo", demoRouter);
