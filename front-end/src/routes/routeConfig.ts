@@ -47,10 +47,14 @@
 
 export const ROUTE_SEGMENTS = {
     LOGIN: "login",
+    FORBIDDEN: "forbidden",
 
     DASHBOARD: "dashboard",
     USERS: "users",
     SETTINGS: "settings",
+    GRAPHS: "graphs",
+    CHARTS: "charts",
+    TABLES: "tables",
 } as const;
 
 /**
@@ -66,8 +70,12 @@ export const ROUTES = {
     HOME: "/",
 
     LOGIN: `/${ROUTE_SEGMENTS.LOGIN}`,
+    FORBIDDEN: `/${ROUTE_SEGMENTS.FORBIDDEN}`,
 
     DASHBOARD: `/${ROUTE_SEGMENTS.DASHBOARD}`,
     USERS: `/${ROUTE_SEGMENTS.USERS}`,
     SETTINGS: `/${ROUTE_SEGMENTS.SETTINGS}`,
+    GRAPHS: `/${ROUTE_SEGMENTS.GRAPHS}`,
+    CHARTS: `/${ROUTE_SEGMENTS.CHARTS}`,
+    TABLES: `/${ROUTE_SEGMENTS.TABLES}`,
 } as const;

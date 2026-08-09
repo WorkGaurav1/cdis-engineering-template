@@ -49,7 +49,9 @@ import {
 
 import { publicRoutes } from "./publicRoutes";
 import { protectedRoutes } from "./protectedRoutes";
+import { ROUTE_SEGMENTS } from "./routeConfig";
 import NotFoundPage from "../shared/pages/NotFoundPage";
+import ForbiddenPage from "../shared/pages/ForbiddenPage";
 
 // -----------------------------------------------------------------------------
 // Router Configuration
@@ -60,6 +62,12 @@ const router = createBrowserRouter([
 
     ...protectedRoutes,
 
+    // Status routes: reachable regardless of auth state, so they live
+    // outside both RequireAuth and RedirectIfAuthenticated.
+    {
+        path: ROUTE_SEGMENTS.FORBIDDEN,
+        element: <ForbiddenPage />,
+    },
     {
         path: "*",
         element: <NotFoundPage />,

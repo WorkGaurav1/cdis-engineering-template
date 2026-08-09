@@ -1,21 +1,19 @@
 import { authApi } from "../api";
-import { tokenStorage } from "../storage";
 
-import type {
-  LoginRequest,
-  LoginResponse,
-} from "../types";
+import type { LoginRequest, User } from "../types";
 
 export const authService = {
-    async login(credentials: LoginRequest): Promise<LoginResponse> {
-        const response = await authApi.login(credentials);
+  async login(credentials: LoginRequest): Promise<User> {
+    const { user } = await authApi.login(credentials);
+    return user;
+  },
 
-        tokenStorage.saveToken(response.accessToken);
+  async getCurrentUser(): Promise<User> {
+    const { user } = await authApi.getCurrentUser();
+    return user;
+  },
 
-        return response;
-    },
-
-    logout(): void {
-        tokenStorage.clearToken();
-    },
+  async logout(): Promise<void> {
+    await authApi.logout();
+  },
 };

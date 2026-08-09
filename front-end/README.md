@@ -1,77 +1,141 @@
-# React + TypeScript + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend application built using React, TypeScript and Vite following the CDIS engineering standards.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Technology Stack
 
-## React Compiler
+- React
+- TypeScript
+- Vite
+- React Router
+- React Hook Form
+- Zod
+- Axios
+- Context API
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+---
 
-Note: This will impact Vite dev & build performances.
+## Project Structure
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+├── app/
+├── auth/
+├── assets/
+├── components/
+├── config/
+├── features/
+├── layouts/
+├── routes/
+├── shared/
+├── styles/
+└── main.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Install
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
+
+---
+
+## Development
+
+Start development server.
+
+```bash
+npm run dev
+```
+
+---
+
+## Build
+
+```bash
+npm run build
+```
+
+---
+
+## Preview Production Build
+
+```bash
+npm run preview
+```
+
+---
+
+## Lint
+
+```bash
+npm run lint
+```
+
+---
+
+## Development Workflow
+
+When adding a new feature:
+
+1. Create feature module.
+2. Create API layer.
+3. Create service layer.
+4. Create hooks.
+5. Create components.
+6. Create page.
+7. Add route.
+8. Add tests.
+9. Update documentation.
+
+---
+
+## Frontend Standards
+
+- Feature-first architecture
+- TypeScript Strict Mode
+- Functional Components
+- Custom Hooks for business logic
+- Presentational Components for UI
+- React Hook Form + Zod for forms
+- Axios for API communication
+- Context only for global application state
+- Absolute imports using aliases
+
+See:
+
+- `../docs/architecture/frontend.md`
+- `../docs/standards/code-style.md`
+- `../docs/standards/naming-conventions.md`
+
+---
+
+## Testing
+
+Run frontend tests.
+
+```bash
+npm test
+```
+
+Run coverage.
+
+```bash
+npm run test:coverage
+```
+
+---
+
+## References
+
+- React — https://react.dev
+- TypeScript — https://www.typescriptlang.org
+- Vite — https://vite.dev
+- React Router — https://reactrouter.com
+- React Hook Form — https://react-hook-form.com
+- Zod — https://zod.dev
+- Axios — https://axios-http.com

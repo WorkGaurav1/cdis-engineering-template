@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cdis-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: cdis
+      MYSQL_USER: cdis
+      MYSQL_PASSWORD: cdis_dev_password
+      MYSQL_ROOT_PASSWORD: cdis_root_dev_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pcdis_root_dev_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql-data:

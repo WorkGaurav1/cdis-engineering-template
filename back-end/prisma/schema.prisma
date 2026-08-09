@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/// A user account.
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique @db.VarChar(255)
+  name     String  @db.VarChar(255)
+  isActive Boolean @default(true)
+
+  passwordHash String @db.VarChar(255)
+
+  /// Consecutive failed login attempts, reset to 0 on success.
+  failedLoginAttempts Int       @default(0)
+  /// Set when the account is temporarily locked after too many failed attempts.
+  lockedUntil         DateTime?
+
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  createdById String?
+  updatedById String?
+  createdBy   User?   @relation("UserAudit_Created", fields: [createdById], references: [id])
+  updatedBy   User?   @relation("UserAudit_Updated", fields: [updatedById], references: [id])
+
+  createdUsers User[] @relation("UserAudit_Created")
+  updatedUsers User[] @relation("UserAudit_Updated")
+
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// An assignable role (e.g. admin, manager, user).
+model Role {
+  id          String  @id @default(uuid())
+  name        String  @unique @db.VarChar(100)
+  description String? @db.VarChar(255)
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("roles")
+}
+
+/// A granular permission (e.g. "users:read", "reports:export").
+model Permission {
+  id          String  @id @default(uuid())
+  key         String  @unique @db.VarChar(150)
+  description String? @db.VarChar(255)
+
+  roles RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("permissions")
+}
+
+/// Join table: which roles a user holds.
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+/// Join table: which permissions a role grants.
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+/// A rotating refresh token. The raw token is never stored, only its hash.
+model RefreshToken {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String @unique @db.VarChar(255)
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  /// Points to the token that replaced this one, forming a rotation chain
+  /// used to detect reuse of an already-rotated token.
+  replacedByTokenId String?        @unique
+  replacedByToken   RefreshToken?  @relation("RefreshTokenChain", fields: [replacedByTokenId], references: [id])
+  replacedToken     RefreshToken?  @relation("RefreshTokenChain")
+
+  createdByIp String? @db.VarChar(64)
+  userAgent   String? @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

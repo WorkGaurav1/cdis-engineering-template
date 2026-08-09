@@ -8,6 +8,12 @@
 dist/
 build/
 
+# Test coverage reports
+coverage/
+
+# Prisma generated client
+**/generated/
+
 # Logs
 *.log
 

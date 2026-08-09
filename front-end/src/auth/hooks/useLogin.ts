@@ -1,25 +1,45 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { authService } from "@/auth/services";
-import type { LoginRequest } from "../types";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { ApiError } from "@/api";
+
+import { useAuth } from "../context/useAuth";
+
+import {
+  loginSchema,
+  type LoginFormValues,
+} from "../schemas/loginSchema";
 
 export function useLogin() {
-  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
-  async function login(credentials: LoginRequest) {
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(values: LoginFormValues) {
     try {
-      setLoading(true);
-
-      const response = await authService.login(credentials);
-
-      return response;
-    } finally {
-      setLoading(false);
+      await login(values);
+    } catch (error) {
+      form.setError("root", {
+        message:
+          error instanceof ApiError
+            ? error.message
+            : "Unable to sign in. Please try again.",
+      });
     }
   }
 
   return {
-    login,
-    loading,
+    register: form.register,
+    handleSubmit: form.handleSubmit(onSubmit),
+    errors: form.formState.errors,
+    isSubmitting: form.formState.isSubmitting,
   };
 }

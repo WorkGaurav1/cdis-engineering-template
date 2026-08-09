@@ -15,6 +15,7 @@ export type AppEnvironment =
 export interface Environment {
   appName: string;
   appEnv: AppEnvironment;
+  apiBaseUrl: string;
 }
 
 /**
@@ -32,6 +33,7 @@ const VALID_ENVIRONMENTS: AppEnvironment[] = [
  */
 const appName = import.meta.env.VITE_APP_NAME;
 const appEnv = import.meta.env.VITE_APP_ENV;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Validate required variables.
@@ -45,6 +47,12 @@ if (!appName) {
 if (!appEnv) {
   throw new Error(
     "[Configuration Error] Missing required environment variable: VITE_APP_ENV"
+  );
+}
+
+if (!apiBaseUrl) {
+  throw new Error(
+    "[Configuration Error] Missing required environment variable: VITE_API_BASE_URL"
   );
 }
 
@@ -65,4 +73,5 @@ if (!VALID_ENVIRONMENTS.includes(appEnv as AppEnvironment)) {
 export const env: Environment = {
   appName,
   appEnv: appEnv as AppEnvironment,
+  apiBaseUrl,
 };

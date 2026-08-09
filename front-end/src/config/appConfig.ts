@@ -7,7 +7,7 @@ export const appConfig = {
   },
 
   api: {
-    baseUrl: "/api",
+    baseUrl: env.apiBaseUrl,
     timeout: 30000,
   },
 } as const;
