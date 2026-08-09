@@ -1,14 +1,13 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import { FileText, FolderKanban, Info, Users as UsersIcon } from "lucide-react";
 
 import { GeoMap, type RegionLayer } from "@/shared";
 
-import { geoDataApi, type IndiaStateProperties } from "../api/geoDataApi";
+import { geoDataApi, type IndiaDistrictProperties, type StateMetric } from "../api/geoDataApi";
 import { GradientLegend } from "../components/GradientLegend";
 import { MapLegend } from "../components/MapLegend";
 import { StatCard } from "../components/StatCard";
-import { generateActivityIntensity, generateStateCount } from "../data/mapMetrics";
 import { generateOverviewStats } from "../data/overviewStats";
 import { buildHoverCard } from "../hoverCard";
 import { getHeatmapColor, getProjectCountTier, PROJECT_COUNT_TIER_COLORS } from "../tierStyles";
@@ -16,6 +15,10 @@ import { getHeatmapColor, getProjectCountTier, PROJECT_COUNT_TIER_COLORS } from 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const INDIA_CENTER: [number, number] = [22.97, 78.65];
 const INDIA_ZOOM = 4;
+// Generous padding around India's real extent (incl. island territories)
+// so panning near the edges doesn't feel clipped.
+const INDIA_MAX_BOUNDS: [[number, number], [number, number]] = [[2, 60], [40, 100]];
+const INDIA_MIN_ZOOM = 3.5;
 
 /** Icon + badge color per overview stat, matched by array position to generateOverviewStats(). */
 const STAT_CARD_META: Array<{ icon: typeof FolderKanban; iconBgClassName: string }> = [
@@ -36,75 +39,89 @@ function formatDateRangeLabel(): string {
 }
 
 function DashboardPage() {
-  const { data: statesData, isPending, isError } = useQuery({
-    queryKey: ["dashboard", "india-states"],
-    queryFn: () => geoDataApi.listIndiaStates(),
+  const [districtsQuery, maskQuery, metricsQuery] = useQueries({
+    queries: [
+      { queryKey: ["dashboard", "india-districts"], queryFn: () => geoDataApi.listIndiaDistricts() },
+      { queryKey: ["dashboard", "india-mask"], queryFn: () => geoDataApi.listIndiaMask() },
+      { queryKey: ["dashboard", "state-metrics"], queryFn: () => geoDataApi.listStateMetrics() },
+    ],
   });
 
-  const projectCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!statesData) return map;
-    for (const feature of statesData.features) {
-      map.set(feature.properties.st_nm, generateStateCount(feature.properties.st_nm));
-    }
-    return map;
-  }, [statesData]);
+  const isPending = districtsQuery.isPending || maskQuery.isPending || metricsQuery.isPending;
+  const isError = districtsQuery.isError || maskQuery.isError || metricsQuery.isError;
+  const districtsData = districtsQuery.data;
+  const maskData = maskQuery.data;
+  const stateMetrics = metricsQuery.data;
 
-  const activityValues = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!statesData) return map;
-    for (const feature of statesData.features) {
-      map.set(feature.properties.st_nm, generateActivityIntensity(feature.properties.st_nm));
+  const metricsByStateCode = useMemo(() => {
+    const map = new Map<string, StateMetric>();
+    for (const metric of stateMetrics ?? []) {
+      map.set(metric.stateCode, metric);
     }
     return map;
-  }, [statesData]);
+  }, [stateMetrics]);
 
   const maxActivity = useMemo(() => {
-    const values = Array.from(activityValues.values());
+    const values = (stateMetrics ?? []).map((metric) => metric.activityIntensity);
     return values.length > 0 ? Math.max(...values) : 1;
-  }, [activityValues]);
+  }, [stateMetrics]);
 
-  const projectDistributionLayer: RegionLayer<IndiaStateProperties> | undefined = useMemo(() => {
-    if (!statesData) return undefined;
+  const totalProjects = useMemo(
+    () => (stateMetrics ?? []).reduce((sum, metric) => sum + metric.projectCount, 0),
+    [stateMetrics],
+  );
+
+  const projectDistributionLayer: RegionLayer<IndiaDistrictProperties> | undefined = useMemo(() => {
+    if (!districtsData) return undefined;
 
     return {
-      id: "india-states-projects",
-      data: statesData,
+      id: "india-districts-projects",
+      data: districtsData,
       style: (feature) => {
-        const tier = getProjectCountTier(projectCounts.get(feature.properties.st_nm) ?? 0);
-        return { color: "#93a4c3", weight: 1, fillColor: PROJECT_COUNT_TIER_COLORS[tier], fillOpacity: 0.92 };
+        const metric = metricsByStateCode.get(feature.properties.st_code);
+        const tier = getProjectCountTier(metric?.projectCount ?? 0);
+        return { color: "#93a4c3", weight: 0.75, fillColor: PROJECT_COUNT_TIER_COLORS[tier], fillOpacity: 0.92 };
       },
       hoverStyle: (feature) => {
-        const tier = getProjectCountTier(projectCounts.get(feature.properties.st_nm) ?? 0);
+        const metric = metricsByStateCode.get(feature.properties.st_code);
+        const tier = getProjectCountTier(metric?.projectCount ?? 0);
         return { color: "#1e293b", weight: 2, fillColor: PROJECT_COUNT_TIER_COLORS[tier], fillOpacity: 1 };
       },
-      tooltip: (feature) =>
-        buildHoverCard(feature.properties.st_nm, [
-          ["Projects", String(projectCounts.get(feature.properties.st_nm) ?? 0)],
-        ]),
+      tooltip: (feature) => {
+        const metric = metricsByStateCode.get(feature.properties.st_code);
+        return buildHoverCard(feature.properties.st_nm, [
+          ["District", feature.properties.district],
+          ["Projects", String(metric?.projectCount ?? 0)],
+        ]);
+      },
     };
-  }, [statesData, projectCounts]);
+  }, [districtsData, metricsByStateCode]);
 
-  const activityIntensityLayer: RegionLayer<IndiaStateProperties> | undefined = useMemo(() => {
-    if (!statesData) return undefined;
+  const activityIntensityLayer: RegionLayer<IndiaDistrictProperties> | undefined = useMemo(() => {
+    if (!districtsData) return undefined;
 
     return {
-      id: "india-states-activity",
-      data: statesData,
+      id: "india-districts-activity",
+      data: districtsData,
       style: (feature) => {
-        const value = activityValues.get(feature.properties.st_nm) ?? 0;
-        return { color: "#ffffff", weight: 0.75, fillColor: getHeatmapColor(value, maxActivity), fillOpacity: 0.88 };
+        const metric = metricsByStateCode.get(feature.properties.st_code);
+        const value = metric?.activityIntensity ?? 0;
+        return { color: "#ffffff", weight: 0.5, fillColor: getHeatmapColor(value, maxActivity), fillOpacity: 0.88 };
       },
       hoverStyle: (feature) => {
-        const value = activityValues.get(feature.properties.st_nm) ?? 0;
+        const metric = metricsByStateCode.get(feature.properties.st_code);
+        const value = metric?.activityIntensity ?? 0;
         return { color: "#1e293b", weight: 2, fillColor: getHeatmapColor(value, maxActivity), fillOpacity: 1 };
       },
-      tooltip: (feature) =>
-        buildHoverCard(feature.properties.st_nm, [
-          ["Activity", String(activityValues.get(feature.properties.st_nm) ?? 0)],
-        ]),
+      tooltip: (feature) => {
+        const metric = metricsByStateCode.get(feature.properties.st_code);
+        return buildHoverCard(feature.properties.st_nm, [
+          ["District", feature.properties.district],
+          ["Activity", String(metric?.activityIntensity ?? 0)],
+        ]);
+      },
     };
-  }, [statesData, activityValues, maxActivity]);
+  }, [districtsData, metricsByStateCode, maxActivity]);
 
   const projectDistributionLayers = useMemo(
     () => (projectDistributionLayer ? [projectDistributionLayer] : []),
@@ -115,7 +132,24 @@ function DashboardPage() {
     [activityIntensityLayer],
   );
 
-  const overviewStats = useMemo(() => generateOverviewStats(), []);
+  const maskOutside = useMemo(
+    () =>
+      maskData
+        ? { data: maskData, color: "#ffffff", maxBounds: INDIA_MAX_BOUNDS, minZoom: INDIA_MIN_ZOOM }
+        : undefined,
+    [maskData],
+  );
+
+  const overviewStats = useMemo(() => {
+    const stats = generateOverviewStats();
+    // Total Projects is real — the sum of the backend-fetched per-state
+    // counts — rather than a separately generated placeholder number.
+    if (stats[0]) {
+      stats[0] = { ...stats[0], value: totalProjects };
+    }
+    return stats;
+  }, [totalProjects]);
+
   const dateRangeLabel = useMemo(() => formatDateRangeLabel(), []);
 
   return (
@@ -153,7 +187,7 @@ function DashboardPage() {
         ))}
       </div>
 
-      {isError && <p className="text-sm text-red-600">Failed to load India state boundaries.</p>}
+      {isError && <p className="text-sm text-red-600">Failed to load dashboard map data.</p>}
       {isPending && !isError && <p className="text-sm text-gray-500">Loading maps…</p>}
 
       {!isPending && !isError && (
@@ -162,7 +196,7 @@ function DashboardPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-gray-900">India Map – Project Distribution</h2>
-                <p className="text-sm text-gray-500">Project distribution by state</p>
+                <p className="text-sm text-gray-500">Project distribution by state and district</p>
               </div>
               <select
                 defaultValue="All States"
@@ -179,6 +213,7 @@ function DashboardPage() {
               zoom={INDIA_ZOOM}
               height={480}
               fitToData
+              maskOutside={maskOutside}
               overlays={{ bottomRight: <MapLegend title="Project Count" /> }}
             />
 
@@ -209,6 +244,7 @@ function DashboardPage() {
               zoom={INDIA_ZOOM}
               height={480}
               fitToData
+              maskOutside={maskOutside}
               overlays={{ bottomRight: <GradientLegend title="Activity Intensity" labels={["High", "Medium", "Low"]} /> }}
             />
 

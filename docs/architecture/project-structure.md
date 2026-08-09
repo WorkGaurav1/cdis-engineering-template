@@ -12,14 +12,13 @@ Where code lives today, so new code goes to the same place.
 
 ## Location
 
-
 .
 ├── front-end/
 ├── back-end/
 ├── docs/
 ├── docker-compose.yml   # MySQL dev container only
 └── README.md
-
+'''
 
 
 
@@ -43,13 +42,13 @@ Where code lives today, so new code goes to the same place.
 | `styles/` | `globals.css` (Tailwind + theme tokens) |
 
 A feature folder (e.g. `features/users/`) looks like:
-```
+
 users/
 ├── api/userApi.ts          # own fetch calls — never imports another feature's api/
 ├── pages/UsersPage.tsx
 ├── users.module.tsx        # FeatureModule: route + nav label/icon/permission
 └── index.ts                 # barrel export
-```
+
 
 **`back-end/src/`** — layered (controller → service → repository), not domain-folder.
 
