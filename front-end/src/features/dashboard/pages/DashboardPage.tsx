@@ -90,7 +90,10 @@ function DashboardPage() {
       tooltip: (feature) => {
         const metric = metricsByStateCode.get(feature.properties.st_code);
         return buildHoverCard(feature.properties.st_nm, [
-          ["District", feature.properties.district],
+          // A handful of source rows carry no district name (state-level
+          // aggregate rows in the upstream dataset) — omit the row
+          // instead of showing "District: undefined".
+          ...(feature.properties.district ? ([["District", feature.properties.district] as [string, string]]) : []),
           ["Projects", String(metric?.projectCount ?? 0)],
         ]);
       },
@@ -116,7 +119,7 @@ function DashboardPage() {
       tooltip: (feature) => {
         const metric = metricsByStateCode.get(feature.properties.st_code);
         return buildHoverCard(feature.properties.st_nm, [
-          ["District", feature.properties.district],
+          ...(feature.properties.district ? ([["District", feature.properties.district] as [string, string]]) : []),
           ["Activity", String(metric?.activityIntensity ?? 0)],
         ]);
       },

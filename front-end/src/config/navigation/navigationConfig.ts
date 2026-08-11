@@ -35,15 +35,12 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { Settings as SettingsIcon } from "lucide-react";
 
 import { chartsModule } from "@/features/charts";
 import { dashboardModule } from "@/features/dashboard";
 import { graphsModule } from "@/features/graphs";
 import { tablesModule } from "@/features/tables";
-import { usersModule } from "@/features/users";
 
-import { ROUTES } from "../../routes/routeConfig";
 import type { FeatureModule } from "./featureModule";
 
 /**
@@ -70,8 +67,9 @@ export interface NavigationItem {
  *
  * Every pluggable feature contributes its nav item via its FeatureModule
  * (see featureModule.ts and protectedRoutes.tsx, which derive routes from
- * the same list) — the two are always in sync by construction. Settings
- * has no backing feature folder yet, so it stays a plain static entry.
+ * their own list) — routes stay registered even for features that opt out
+ * of a sidebar entry (Users, Settings — Settings is linked from the
+ * account menu instead, see ProfileMenu.tsx).
  * -----------------------------------------------------------------------------
  */
 
@@ -84,13 +82,11 @@ function toNavItem(module: FeatureModule): NavigationItem {
     };
 }
 
-const featureModules: FeatureModule[] = [dashboardModule, graphsModule, chartsModule, tablesModule, usersModule];
-
-export const navigationConfig: NavigationItem[] = [
-    ...featureModules.map(toNavItem),
-    {
-        label: "Settings",
-        path: ROUTES.SETTINGS,
-        icon: SettingsIcon,
-    },
+const featureModules: FeatureModule[] = [
+    dashboardModule,
+    graphsModule,
+    chartsModule,
+    tablesModule,
 ];
+
+export const navigationConfig: NavigationItem[] = featureModules.map(toNavItem);

@@ -13,20 +13,20 @@ Production-ready full-stack engineering template for building secure, scalable, 
 - Role-Based Access Control (RBAC)
 - React Hook Form + Zod
 - Docker Support
-- Testing (Unit, Integration & E2E)
+- Unit, Integration & End-to-End Testing
 - CI/CD Ready
 
 ---
 
 ## Repository Structure
 
-
+```text
 .
 ├── front-end/      # React application
 ├── back-end/       # Node.js application
 ├── docs/           # Engineering documentation
 └── README.md
-
+```
 
 ---
 
@@ -40,45 +40,45 @@ Production-ready full-stack engineering template for building secure, scalable, 
 
 ---
 
-## Bootstrap
+# Bootstrap
 
-### Clone Repository
+## 1. Clone Repository
 
-bash
+```bash
 git clone <repository-url>
 cd cdis-engineering-template
+```
 
+## 2. Install Dependencies
 
-### Install Dependencies
-
-Frontend
+### Frontend
 
 ```bash
 cd front-end
 npm install
 ```
 
-Backend
+### Backend
 
 ```bash
 cd ../back-end
 npm install
 ```
 
-### Start Database
+## 3. Start Database
 
 ```bash
 docker compose up -d
 ```
 
-### Start Backend
+## 4. Start Backend
 
 ```bash
 cd back-end
 npm run dev
 ```
 
-### Start Frontend
+## 5. Start Frontend
 
 ```bash
 cd front-end
@@ -87,16 +87,16 @@ npm run dev
 
 ---
 
-## Build
+# Build
 
-Frontend
+### Frontend
 
 ```bash
 cd front-end
 npm run build
 ```
 
-Backend
+### Backend
 
 ```bash
 cd back-end
@@ -105,23 +105,23 @@ npm run build
 
 ---
 
-## Testing
+# Testing
 
-Frontend
+### Frontend
 
 ```bash
 cd front-end
 npm test
 ```
 
-Backend
+### Backend
 
 ```bash
 cd back-end
 npm test
 ```
 
-End-to-End
+### End-to-End
 
 ```bash
 npm run test:e2e
@@ -129,13 +129,13 @@ npm run test:e2e
 
 ---
 
-## Development Workflow
+# Development Workflow
 
-### Add a New Feature
+## Add a New Feature
 
-1. Create feature/module.
-2. Implement frontend.
-3. Implement backend.
+1. Create the feature/module.
+2. Implement the frontend.
+3. Implement the backend.
 4. Add validation.
 5. Add tests.
 6. Update documentation.
@@ -144,7 +144,9 @@ See:
 
 - `docs/development/adding-feature.md`
 
-### Remove a Feature
+---
+
+## Remove a Feature
 
 1. Remove routes.
 2. Remove UI.
@@ -154,7 +156,7 @@ See:
 
 ---
 
-## Documentation
+# Documentation
 
 | Document | Purpose |
 |----------|---------|
@@ -166,7 +168,7 @@ See:
 
 ---
 
-## References
+# References
 
 - React — https://react.dev
 - Vite — https://vite.dev

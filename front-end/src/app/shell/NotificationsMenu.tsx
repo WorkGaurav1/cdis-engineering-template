@@ -15,7 +15,7 @@ function NotificationsMenu() {
                 <button
                     type="button"
                     aria-label="Notifications"
-                    className="rounded-md p-2 text-slate-400 hover:bg-white/5 hover:text-white"
+                    className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                     <Bell aria-hidden="true" className="h-5 w-5" />
                 </button>

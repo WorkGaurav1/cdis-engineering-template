@@ -1,52 +1,65 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import type { User } from "@/auth";
-import { BarChart } from "@/shared";
+import { AreaChart, BarChart, LineChart, pivotChartPoints, type ChartSeries } from "@/shared";
 
-import { graphsApi } from "../api/graphsApi";
+import { graphsApi, type DemoChartDataset } from "../api/graphsApi";
 
-interface RoleCount {
-  role: string;
-  count: number;
-}
-
-/** Real, derived from the actual user list — never fabricated. */
-function countUsersByRole(users: User[]): RoleCount[] {
-  const counts = new Map<string, number>();
-
-  for (const user of users) {
-    for (const role of user.roles) {
-      counts.set(role, (counts.get(role) ?? 0) + 1);
-    }
-  }
-
-  return Array.from(counts.entries()).map(([role, count]) => ({ role, count }));
-}
+const CARTESIAN_TYPES = new Set(["bar", "line", "area"]);
 
 function GraphsPage() {
   const { data, isPending, isError } = useQuery({
-    queryKey: ["graphs", "users"],
-    queryFn: () => graphsApi.listUsers(),
+    queryKey: ["graphs", "chart-datasets"],
+    queryFn: () => graphsApi.listChartDatasets(),
   });
 
-  // data?.users is a stable reference from the query cache; a `?? []`
-  // fallback inline here would be a fresh array every render, defeating
-  // this memo — so the fallback lives inside the memo body instead.
-  const roleCounts = useMemo(() => countUsersByRole(data?.users ?? []), [data?.users]);
+  const datasets = useMemo(
+    () => (data?.datasets ?? []).filter((dataset) => CARTESIAN_TYPES.has(dataset.chartType)),
+    [data?.datasets],
+  );
 
   return (
     <div>
       <h1 className="mb-1 text-xl font-semibold text-gray-900">Graphs</h1>
-      <p className="mb-4 text-sm text-gray-500">Users per role, computed live from the current user list.</p>
+      <p className="mb-4 text-sm text-gray-500">
+        Bar, line, and area chart variants — including grouped and multi-series data — all fetched live from the
+        backend. Pick whichever fits the data you're visualizing.
+      </p>
 
       {isError ? (
-        <p className="text-sm text-red-600">Failed to load users.</p>
+        <p className="text-sm text-red-600">Failed to load chart data.</p>
       ) : isPending ? (
         <p className="text-sm text-gray-500">Loading…</p>
       ) : (
-        <BarChart data={roleCounts} xKey="role" yKey="count" title="Users by Role" height={320} />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {datasets.map((dataset) => (
+            <GraphCard key={dataset.id} dataset={dataset} />
+          ))}
+        </div>
       )}
+    </div>
+  );
+}
+
+function GraphCard({ dataset }: { dataset: DemoChartDataset }) {
+  const { rows, seriesKeys } = useMemo(() => pivotChartPoints(dataset.points), [dataset.points]);
+  const series: ChartSeries<Record<string, string | number>>[] = useMemo(
+    () => seriesKeys.map((key) => ({ key })),
+    [seriesKeys],
+  );
+
+  return (
+    <div>
+      {dataset.chartType === "bar" && (
+        <BarChart data={rows} xKey="label" series={series} title={dataset.title} height={280} />
+      )}
+      {dataset.chartType === "line" && (
+        <LineChart data={rows} xKey="label" series={series} title={dataset.title} height={280} />
+      )}
+      {dataset.chartType === "area" && (
+        <AreaChart data={rows} xKey="label" series={series} title={dataset.title} height={280} />
+      )}
+      {dataset.description && <p className="mt-2 text-xs text-gray-500">{dataset.description}</p>}
     </div>
   );
 }

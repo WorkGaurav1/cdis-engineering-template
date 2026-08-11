@@ -1,83 +1,89 @@
 # Project Structure
 
-The actual on-disk layout of both apps — not a planned/aspirational one.
+The actual on-disk layout of this repository and where new code belongs.
 
 ---
 
 ## Purpose
 
-Where code lives today, so new code goes to the same place.
+Show developers the real structure of both the frontend and backend, not a hypothetical one.
 
 ---
 
 ## Location
 
-.
-├── front-end/
-├── back-end/
-├── docs/
-├── docker-compose.yml   # MySQL dev container only
-└── README.md
-'''
+Root layout:
 
-
+```
+front-end/
+back-end/
+docs/
+docker-compose.yml
+README.md
+```
 
 ---
 
 ## Workflow
 
-**`front-end/src/`** — feature-folder frontend, layered backend counterpart on the API side.
+**Front-end (`front-end/src/`)**
 
 | Dir | Purpose |
 |---|---|
-| `api/` | axios client, interceptors (CSRF + silent refresh), typed error |
-| `app/` | providers (React Query, Auth), shell (Sidebar, Navbar, AppShell) |
-| `assets/` | exists, currently empty — static files (e.g. the logo) are served from `public/` instead |
-| `auth/` | the whole auth module — see `authentication.md` |
-| `config/` | env/app config (mirrors the backend's fail-fast pattern) |
-| `features/` | one folder per pluggable feature: `charts/ dashboard/ graphs/ tables/ users/` |
-| `layouts/` | `PublicLayout`, `ProtectedLayout` |
-| `routes/` | `routeConfig.ts` (path constants), `publicRoutes.tsx`, `protectedRoutes.tsx` |
-| `shared/` | `components/`, `hooks/`, `utils/`, `types/`, `validations/` reused across features |
-| `styles/` | `globals.css` (Tailwind + theme tokens) |
+| `api/` | HTTP client, typed API layer, interceptors for auth/session behavior |
+| `app/` | App providers, shell, layout composition |
+| `assets/` | static assets (fonts, icons, images, SVG) |
+| `auth/` | authentication module: pages, forms, route guards, hooks, API calls |
+| `config/` | runtime app config and environment mapping |
+| `features/` | feature modules for dashboard, charts, graphs, tables, users |
+| `layouts/` | public and protected route layouts |
+| `routes/` | route definitions and route composition |
+| `shared/` | reusable components, hooks, utils, validations, types |
+| `styles/` | global CSS, theme variables |
 
-A feature folder (e.g. `features/users/`) looks like:
+A feature module looks like:
 
-users/
-├── api/userApi.ts          # own fetch calls — never imports another feature's api/
-├── pages/UsersPage.tsx
-├── users.module.tsx        # FeatureModule: route + nav label/icon/permission
-└── index.ts                 # barrel export
+```
+features/<feature>/
+  api/
+  components/
+  hooks/
+  pages/
+  types/
+  <feature>.module.tsx
+  index.ts
+```
 
-
-**`back-end/src/`** — layered (controller → service → repository), not domain-folder.
+**Back-end (`back-end/src/`)**
 
 | Dir | Purpose |
 |---|---|
-| `config/` | fail-fast env loading (`env.ts`) |
-| `controllers/` | HTTP layer: read req, call service, shape response |
-| `dto/` | Zod request-validation schemas |
-| `errors/` | typed error classes (`UnauthorizedError`, etc.) → mapped by `errorHandler` |
-| `lib/` | `prisma.ts`, `logger.ts`, `cookies.ts` |
-| `mappers/` | e.g. `toSafeUser` (strip `passwordHash` before it ever reaches a response) |
-| `middlewares/` | `requireAuth`, `requirePermission`, `csrf`, `validate`, `rateLimiters`, error/404 handlers |
-| `repositories/` | all Prisma queries live here — services never call `prisma` directly |
-| `routes/` | one file per resource, mounted in `routes/index.ts` |
-| `services/` | business logic |
-| `test-utils/` | shared test helpers (Express req/res mocks) |
-| `prisma/` | `schema.prisma`, `migrations/`, `seed.ts` |
+| `config/` | validated environment config (`env.ts`) |
+| `controllers/` | HTTP handlers, request/response mapping |
+| `dto/` | Zod request validation schemas |
+| `errors/` | application error classes and typed error handling |
+| `lib/` | Prisma client, cookie helpers, logger |
+| `mappers/` | response-safe data mapping, e.g. `toSafeUser` |
+| `middlewares/` | auth, permission, CSRF, validation, rate limiting, 404/error handlers |
+| `repositories/` | Prisma queries and persistence logic |
+| `routes/` | route registration and route files |
+| `services/` | business logic, token/session rules, auth workflows |
+| `test-utils/` | shared backend test helpers |
+| `prisma/` | schema, migrations, seed data |
 
 ---
 
 ## Common Tasks
 
-| If you are adding... | Location |
+| Task | Location |
 |---|---|
-| New frontend feature | `front-end/src/features/<name>/`, register its module in `routes/protectedRoutes.tsx` + `config/navigation/navigationConfig.ts` |
-| Reusable UI component | `front-end/src/shared/components/` |
-| New backend resource | new files across `controllers/ services/ repositories/ routes/ dto/`, following an existing one (e.g. `user.*`) |
-| Database model | `back-end/prisma/schema.prisma`, then `npm run prisma:migrate` |
-| New doc | `docs/{architecture,standards,development}/` |
+| Add a frontend feature | `front-end/src/features/<name>/`, register in `front-end/src/routes/protectedRoutes.tsx` and `front-end/src/config/navigation/navigationConfig.ts` |
+| Add a shared component | `front-end/src/shared/components/` |
+| Add a backend resource | new `controller`, `service`, `repository`, `route`, `dto` files in `back-end/src/` |
+| Add a database model | `back-end/prisma/schema.prisma`, then `cd back-end && npm run prisma:migrate` |
+| Add architecture docs | `docs/architecture/` |
+| Add standards docs | `docs/standards/` |
+| Add development workflow docs | `docs/development/` |
 
 ---
 
@@ -85,6 +91,7 @@ users/
 
 - [System Design](system-design.md)
 - [Authentication](authentication.md)
+- [Authorization](authorization.md)
 - [Adding a Feature](../development/adding-feature.md)
 - [Adding a Module](../development/adding-module.md)
 

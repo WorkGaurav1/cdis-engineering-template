@@ -1,12 +1,12 @@
 # API Standards
 
-REST under `/api/v1`, one response envelope, one validation path, one error path.
+The actual request/response conventions used by the backend and frontend in this repository.
 
 ---
 
 ## Purpose
 
-The conventions every backend route in this project follows.
+Describe how backend routes behave and how frontend code consumes API responses.
 
 ---
 
@@ -14,42 +14,88 @@ The conventions every backend route in this project follows.
 
 | Piece | File |
 |---|---|
-| Response envelope | `back-end/src/utils/apiResponse.ts` (`sendSuccess`, `sendError`) |
-| Error types | `back-end/src/errors/AppError.ts` |
-| Central error handler | `back-end/src/middlewares/errorHandler.ts` |
-| Body validation | `back-end/src/middlewares/validate.ts` (`validateBody`) + per-route Zod schema in `dto/` |
-| Route mounting | `back-end/src/routes/index.ts` |
-| Frontend client | `front-end/src/api/client/apiClient.ts`, `httpClient.ts`, `interceptors.ts` |
+| Response envelope | `back-end/src/utils/apiResponse.ts` |
+| Error handling | `back-end/src/middlewares/errorHandler.ts` |
+| Validation middleware | `back-end/src/middlewares/validate.ts` |
+| API route mounting | `back-end/src/routes/index.ts` |
+| Frontend API client | `front-end/src/api/client/apiClient.ts` |
+| HTTP client | `front-end/src/api/client/httpClient.ts` |
+| Axios interceptors | `front-end/src/api/client/interceptors.ts` |
+| API types | `front-end/src/api/types.ts` |
 
 ---
 
 ## Workflow
 
-**Envelope** — every response is one of:
+**Backend response contract**
+
+- Success responses use `sendSuccess(res, data, statusCode)`.
+- Error responses use `sendError(res, statusCode, code, message)`.
+- All responses are JSON envelopes.
+
+**Success envelope**
+
 ```json
-{ "success": true,  "data": { ... } }
-{ "success": false, "error": { "code": "VALIDATION_ERROR", "message": "..." } }
+{
+  "success": true,
+  "data": {
+    ...
+  }
+}
 ```
 
-**Request handling**
-```
-route → validateBody(schema) → controller → service → repository → Prisma
-  controller calls sendSuccess(res, data, statusCode)
-  any thrown AppError subclass → errorHandler → sendError(...)
-  unexpected (non-AppError) throw → logged in full, client gets a generic 500
+**Error envelope**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message"
+  }
+}
 ```
 
-Frontend `apiClient.get/post/put/patch/delete` unwraps `.data.data` automatically — feature `api/*.ts` files call `apiClient`, not `httpClient`, directly.
+**Frontend API consumption**
+
+- `apiClient` unwraps the backend envelope and returns `data`.
+- Feature APIs call `apiClient.post/get/put/patch/delete`.
+- The low-level HTTP client is `httpClient`, configured with `withCredentials: true`.
+- Axios interceptors handle CSRF headers, 401 refresh, and auth session expiration.
+
+---
+
+## How it works in this project
+
+1. Backend route receives a request.
+2. If the route expects JSON input, `validateBody(schema)` runs.
+3. Controller executes and calls `sendSuccess()` on success.
+4. If a service throws an `AppError`, `errorHandler` returns a safe error envelope.
+5. If an unexpected exception occurs, `errorHandler` returns `500 INTERNAL_ERROR`.
+6. Frontend `apiClient` returns the `data` field directly to callers.
 
 ---
 
 ## Common Tasks
 
-| Task | File |
+| Task | What to change |
 |---|---|
-| Add an endpoint | route in `routes/<name>.routes.ts` → controller → service; validate with a Zod schema in `dto/` |
-| Return a new error type | add a class to `errors/AppError.ts` (statusCode + code), `throw` it from the service |
-| Call the API from the frontend | add a method to that feature's `api/<name>Api.ts` using `apiClient` |
+| Add a new endpoint | Add route in `back-end/src/routes/*.ts`, controller, service, repository, and DTO schema |
+| Validate request body | Add a Zod schema in `back-end/src/dto/` and apply `validateBody(schema)` in the route |
+| Add a new frontend API call | Create or update `front-end/src/features/<feature>/api/<name>Api.ts` using `apiClient` |
+| Customize error handling | Update `back-end/src/middlewares/errorHandler.ts` and add AppError subclasses in `back-end/src/errors/` |
+| Inspect API shape | Check `front-end/src/api/types.ts` and backend response helpers |
+
+---
+
+## Commands
+
+```bash
+cd back-end
+npm run dev
+```
+
+Use the frontend app to call API routes through the browser. Every request is made through the shared `httpClient`.
 
 ---
 
@@ -63,5 +109,5 @@ Frontend `apiClient.get/post/put/patch/delete` unwraps `.data.data` automaticall
 
 ## References
 
-- [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md)
+- [Express Documentation](https://expressjs.com/)
 - [Zod Documentation](https://zod.dev/)

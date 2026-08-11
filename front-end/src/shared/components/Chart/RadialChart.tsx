@@ -1,28 +1,31 @@
-import { Cell, Pie, PieChart as RechartsPieChart, Tooltip } from "recharts";
+import { Cell, RadialBar, RadialBarChart as RechartsRadialBarChart, Tooltip } from "recharts";
 
 import { ChartContainer } from "./ChartContainer";
 import { DEFAULT_CHART_COLORS } from "./chartSeries";
 
-interface PieChartProps<T extends object> {
+interface RadialChartProps<T extends object> {
   data: T[];
   nameKey: Extract<keyof T, string>;
   valueKey: Extract<keyof T, string>;
   title?: string;
   height?: number;
   colors?: string[];
-  /** e.g. "55%" for a donut; 0 (default) for a solid pie. */
-  innerRadius?: number | string;
 }
 
-export function PieChart<T extends object>({
+/**
+ * Concentric rings, one per row — e.g. percentage-complete per team.
+ * Recharts' RadialBar legend binding is awkward for per-row labels, so
+ * the name/color key is rendered as a plain swatch list under the
+ * chart instead of via recharts' <Legend>.
+ */
+export function RadialChart<T extends object>({
   data,
   nameKey,
   valueKey,
   title,
   height,
   colors = DEFAULT_CHART_COLORS,
-  innerRadius = 0,
-}: PieChartProps<T>) {
+}: RadialChartProps<T>) {
   return (
     <ChartContainer
       title={title}
@@ -41,14 +44,14 @@ export function PieChart<T extends object>({
         </div>
       }
     >
-      <RechartsPieChart>
-        <Pie data={data} dataKey={valueKey} nameKey={nameKey} innerRadius={innerRadius} outerRadius="80%" paddingAngle={innerRadius ? 2 : 0}>
+      <RechartsRadialBarChart data={data} innerRadius="25%" outerRadius="100%" startAngle={90} endAngle={-270}>
+        <RadialBar dataKey={valueKey} background cornerRadius={6}>
           {data.map((_, index) => (
             <Cell key={index} fill={colors[index % colors.length]} />
           ))}
-        </Pie>
+        </RadialBar>
         <Tooltip />
-      </RechartsPieChart>
+      </RechartsRadialBarChart>
     </ChartContainer>
   );
 }

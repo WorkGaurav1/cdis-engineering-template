@@ -4,6 +4,7 @@ import type { FeatureModule } from "@/config/navigation/featureModule";
 import { chartsModule } from "@/features/charts";
 import { dashboardModule } from "@/features/dashboard";
 import { graphsModule } from "@/features/graphs";
+import { settingsModule } from "@/features/settings";
 import { tablesModule } from "@/features/tables";
 import { usersModule } from "@/features/users";
 import { RequireAuth, RequirePermission } from "@/auth";
@@ -14,7 +15,14 @@ import { ProtectedLayout } from "../layouts";
  * folder only requires removing its entry from this array — the route
  * tree and the sidebar (navigationConfig.ts) both derive from it.
  */
-const featureModules: FeatureModule[] = [dashboardModule, graphsModule, chartsModule, tablesModule, usersModule];
+const featureModules: FeatureModule[] = [
+  dashboardModule,
+  graphsModule,
+  chartsModule,
+  tablesModule,
+  usersModule,
+  settingsModule,
+];
 
 function toRoute(module: FeatureModule): RouteObject {
   const route: RouteObject = { path: module.segment, element: module.element };

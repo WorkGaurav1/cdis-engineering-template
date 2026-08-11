@@ -2,35 +2,27 @@ import {
   Bar,
   BarChart as RechartsBarChart,
   CartesianGrid,
-  Cell,
+  Legend,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
 import { ChartContainer } from "./ChartContainer";
+import { DEFAULT_CHART_COLORS, type ChartSeries } from "./chartSeries";
 
 interface BarChartProps<T extends object> {
   data: T[];
   xKey: Extract<keyof T, string>;
-  yKey: Extract<keyof T, string>;
+  /** One bar per series, grouped side by side (or stacked when `stacked` is set). */
+  series: ChartSeries<T>[];
   title?: string;
   height?: number;
-  /** Matches the --color-primary value in globals.css's @theme block. Ignored when `colors` is set. */
-  color?: string;
-  /** Per-bar colors, cycling if shorter than `data` — for categorical (not sequential) bars. */
-  colors?: string[];
+  /** Stack series on top of each other instead of grouping them side by side. */
+  stacked?: boolean;
 }
 
-export function BarChart<T extends object>({
-  data,
-  xKey,
-  yKey,
-  title,
-  height,
-  color = "#c10003",
-  colors,
-}: BarChartProps<T>) {
+export function BarChart<T extends object>({ data, xKey, series, title, height, stacked = false }: BarChartProps<T>) {
   return (
     <ChartContainer title={title} height={height}>
       <RechartsBarChart data={data}>
@@ -38,9 +30,17 @@ export function BarChart<T extends object>({
         <XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
         <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
         <Tooltip />
-        <Bar dataKey={yKey} fill={color} radius={[4, 4, 0, 0]}>
-          {colors && data.map((_, index) => <Cell key={index} fill={colors[index % colors.length]} />)}
-        </Bar>
+        {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
+        {series.map((s, index) => (
+          <Bar
+            key={s.key}
+            dataKey={s.key}
+            name={s.name ?? s.key}
+            fill={s.color ?? DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length]}
+            radius={stacked ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+            stackId={stacked ? "stack" : undefined}
+          />
+        ))}
       </RechartsBarChart>
     </ChartContainer>
   );

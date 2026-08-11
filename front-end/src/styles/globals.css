@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/*
+ * Class-based dark variant (Tailwind v4 defaults to media-query based
+ * `prefers-color-scheme`). The app shell (Sidebar/Navbar) toggles a
+ * `.dark` class on <html> via ThemeProvider — see app/shell/theme.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /*
    * Brand palette sampled directly from the CDIS logo (flask outline +

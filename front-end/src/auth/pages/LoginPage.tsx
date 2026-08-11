@@ -27,11 +27,11 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen bg-white">
-      {/* Brand panel — hidden below lg. Background is a subtle red gradient
-          (brand primary, sampled from the logo) with soft accent-color
-          blurs from the same logo palette for depth, plus a faint dot-grid
-          texture so the panel isn't a flat color field. */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-primary to-[#7a0002] px-12 py-12 text-white lg:flex">
+      {/* Brand panel — hidden below lg. Background is a dark navy gradient
+          matching the app shell's Sidebar/Navbar (slate-900), with soft
+          accent-color blurs from the logo palette for depth, plus a faint
+          dot-grid texture so the panel isn't a flat color field. */}
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 px-12 py-12 text-white lg:flex">
         <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent-orange/20 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-16 h-96 w-96 rounded-full bg-accent-blue/15 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute right-16 top-1/3 h-48 w-48 rounded-full bg-accent-yellow/10 blur-3xl" />

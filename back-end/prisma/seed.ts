@@ -61,7 +61,7 @@ async function seedRolesAndPermissions(): Promise<void> {
 
 // --- Demo state metrics (Dashboard maps) -----------------------------
 
-/** [name, code] pairs — must match front-end/public/data/india-states.geojson's st_nm/st_code. */
+/** [name, code] pairs — must match front-end/public/data/india-districts.geojson's st_nm/st_code. All 36 states/UTs. */
 const DEMO_STATES: Array<[name: string, code: string]> = [
   ["Mizoram", "15"], ["Tamil Nadu", "33"], ["Madhya Pradesh", "23"], ["Maharashtra", "27"],
   ["Chhattisgarh", "22"], ["Gujarat", "24"], ["Odisha", "21"], ["Andhra Pradesh", "37"],
@@ -71,6 +71,8 @@ const DEMO_STATES: Array<[name: string, code: string]> = [
   ["Uttar Pradesh", "09"], ["Rajasthan", "08"], ["Delhi", "07"], ["Haryana", "06"],
   ["Sikkim", "11"], ["Bihar", "10"], ["Jharkhand", "20"], ["Ladakh", "38"],
   ["Jammu and Kashmir", "01"], ["Himachal Pradesh", "02"], ["Punjab", "03"], ["Uttarakhand", "05"],
+  ["Chandigarh", "04"], ["Lakshadweep", "31"], ["Andaman and Nicobar Islands", "35"],
+  ["Dadra and Nagar Haveli and Daman and Diu", "26"],
 ];
 
 function randomInt(min: number, max: number): number {

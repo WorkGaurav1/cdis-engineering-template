@@ -1,12 +1,12 @@
 # System Design
 
-Two independently-deployed apps (no shared workspace) talking over a REST API, backed by MySQL.
+How the frontend, backend, database, and auth/session layers are wired together in this repository.
 
 ---
 
 ## Purpose
 
-The high-level shape of the system — what talks to what, and where each piece runs.
+Capture the actual runtime architecture and integration points for this project.
 
 ---
 
@@ -14,30 +14,73 @@ The high-level shape of the system — what talks to what, and where each piece 
 
 | Piece | Path | Dev port |
 |---|---|---|
-| Frontend (React + Vite SPA) | `front-end/` | 5173 |
-| Backend (Express API) | `back-end/` | 4000 |
-| Database (MySQL 8, Docker) | `docker-compose.yml` | 3308 → container's 3306 |
+| Frontend SPA | `front-end/` | `5173` |
+| Backend API | `back-end/` | `4000` |
+| Database | `docker-compose.yml` | container `3306` |
+| Versioned API router | `back-end/src/routes/index.ts` | mounted at `/api/v1` |
+| Health router | `back-end/src/routes/health.routes.ts` | mounted at `/health` |
 
 ---
 
 ## Workflow
 
 ```
-Browser (SPA, :5173)
-  ↓ fetch/axios, credentials included
-Express app  (back-end/src/app.ts), mounted at /api/v1
-  ↓ middleware order: helmet → cors(credentials) → compression →
-    cookie-parser → json body → pino-http → global rate limit →
-    /health, /api/v1 routers → 404 handler → error handler
-  ↓ controller → service → repository
-Prisma (mariadb driver adapter)
-  ↓
-MySQL 8 (Docker, dev only)
+Browser (React SPA) :5173
+  ↓ axios / withCredentials
+Frontend API client  (front-end/src/api/client/httpClient.ts)
+  ↓ /api/v1 routes
+Backend Express app   (back-end/src/app.ts)
+  ↓ middleware pipeline
+Prisma repository layer (back-end/src/repositories)
+  ↓ MariaDB / MySQL
+Database container      (docker-compose.yml)
 ```
 
-- CORS is locked to a single origin (`CORS_ORIGIN` env var) with `credentials: true` — required because auth is httpOnly-cookie based, not bearer-token based.
-- `/health` is unauthenticated and unversioned; all product routes live under `/api/v1`.
-- Graceful shutdown (`server.ts`) drains in-flight requests and disconnects Prisma on `SIGTERM`/`SIGINT`.
+- The frontend runs as a Vite development server and communicates with the backend via REST.
+- The backend is a standalone Express app with a versioned API under `/api/v1`.
+- Health checks live outside API versioning at `/health`.
+- MySQL is intended for local development via `docker compose` and the repository uses Prisma with the MariaDB adapter.
+
+---
+
+## Request flow
+
+1. Browser request starts in the frontend.
+2. Requests use `axios` with `withCredentials: true`.
+3. If the request is authenticated, cookies are sent automatically by the browser.
+4. The backend applies middleware in this order:
+   - `helmet()`
+   - `cors()` with credentials enabled
+   - `compression()`
+   - `cookieParser()`
+   - `express.json()`
+   - `pino-http`
+   - global rate limiter
+   - route dispatch under `/health` or `/api/v1`
+   - 404 handler
+   - error handler
+5. Controllers call services, services call repositories, repositories call Prisma.
+6. Responses are normal JSON envelopes and HTTP status codes.
+
+---
+
+## Session and auth design
+
+- Authentication is cookie-based using `access_token`, `refresh_token`, and `csrf_token`.
+- `access_token` is a JWT valid for a short period.
+- `refresh_token` is an opaque random value stored hashed in the database.
+- `csrf_token` is readable by frontend JS and used for double-submit CSRF protection.
+- `requireAuth` validates the JWT and attaches `req.userId`.
+- `requirePermission` loads the current user and checks permission keys.
+
+---
+
+## Why this shape
+
+- Separate frontend/backend apps make the template reusable for independent deployment.
+- Explicit API versioning keeps expansion safe as routes are added.
+- Cookie-based auth with credentialed CORS matches the current backend session design.
+- The backend is layered, not fully domain-driven, which keeps data access paths obvious for new engineers.
 
 ---
 
@@ -45,19 +88,23 @@ MySQL 8 (Docker, dev only)
 
 | Task | Where |
 |---|---|
-| Add a new top-level route group | register in `back-end/src/routes/index.js` (mounted under `/api/v1`) |
-| Change the CORS origin | `.env` `CORS_ORIGIN` |
-| Change global rate limit | `app.ts` (baseline limiter, not the per-route ones in `security.md`) |
-| Trace a request | `pino-http` logs each request; see `back-end/src/lib/logger.ts` |
+| Add a new API versioned route | `back-end/src/routes/index.ts` |
+| Add a new backend resource | `back-end/src/controllers/`, `back-end/src/services/`, `back-end/src/repositories/`, `back-end/src/dto/` |
+| Add a new frontend feature | `front-end/src/features/` + register module in `front-end/src/routes/protectedRoutes.tsx` + nav in `front-end/src/config/navigation/navigationConfig.ts` |
+| Change the default API base URL | `front-end/src/config/appConfig.ts` |
+| Change CORS policy | `back-end/src/app.ts` and `.env` `CORS_ORIGIN` |
+| Seed or reset database | `cd back-end && npm run prisma:seed` |
 
 ---
 
 ## Commands
 
 ```bash
-docker compose up -d mysql   # from repo root
-cd back-end && npm run dev   # :4000
-cd front-end && npm run dev  # :5173
+docker compose up -d mysql
+cd back-end && npm install
+cd front-end && npm install
+cd back-end && npm run dev
+cd front-end && npm run dev
 ```
 
 ---

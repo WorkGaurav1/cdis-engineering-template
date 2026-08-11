@@ -1,12 +1,12 @@
 # Authorization
 
-Hybrid RBAC: roles are for assignment, permissions are what every guard actually checks.
+Hybrid RBAC: roles assign permissions, but every guard checks permission keys directly.
 
 ---
 
 ## Purpose
 
-How this project decides what an authenticated user is allowed to do.
+Document how authenticated users are authorized in this repository and where developers should extend permission checks.
 
 ---
 
@@ -14,52 +14,45 @@ How this project decides what an authenticated user is allowed to do.
 
 | Layer | Files |
 |---|---|
-| Data model | `back-end/prisma/schema.prisma` (`Role`, `Permission`, `UserRole`, `RolePermission`) |
-| Seed data | `back-end/prisma/seed.ts` |
-| Route guard | `back-end/src/middlewares/requirePermission.ts` |
-| Example usage | `back-end/src/routes/user.routes.ts` |
-| Frontend check (hook + plain fn) | `front-end/src/auth/hooks/usePermission.ts` |
-| Frontend route guard | `front-end/src/auth/components/RequirePermission.tsx` |
-| Frontend inline UI guard | `front-end/src/auth/components/PermissionGate.tsx` |
+| Database schema | `back-end/prisma/schema.prisma` (`Role`, `Permission`, `UserRole`, `RolePermission`) |
+| Seeded roles/permissions | `back-end/prisma/seed.ts` |
+| Backend route guard | `back-end/src/middlewares/requirePermission.ts` |
+| Example protected route | `back-end/src/routes/user.routes.ts` |
+| Permission helpers | `front-end/src/auth/hooks/usePermission.ts` |
+| Route guard | `front-end/src/auth/components/RequirePermission.tsx` |
+| UI gate | `front-end/src/auth/components/PermissionGate.tsx` |
+| User payload shape | `back-end/src/mappers/user.mapper.ts` |
 
 ---
 
 ## Workflow
 
-**Seeded roles → permissions** (`seed.ts`)
-```
-admin    → users:read, users:write, roles:manage
-manager  → users:read
-user     → (none)
-```
+**Backend authorization**
 
-**Backend check**
-```
-route → requireAuth (who) → requirePermission("users:read") (what)
-  → loads req.user.permissions once per request, caches on req.user
-  → 403 if none of the required permissions are present
-```
+1. `requireAuth` authenticates the request and sets `req.userId`.
+2. `requirePermission("users:read")` or another permission guard loads the current user from the backend via `authService.getCurrentUser(req.userId)` and caches it on `req.user`.
+3. The guard checks permission keys against `req.user.permissions`.
+4. If the user lacks the required permission, the request returns `403 Forbidden`.
 
-**Frontend checks** — three ways to use the same `hasPermission(user, permission)` logic:
-```
-usePermission("users:read")        → boolean, for conditional logic in a component
-<RequirePermission permission=.. />  → route guard, redirects to /forbidden
-<PermissionGate permission=.. />     → hides/shows a piece of UI, no navigation blocked
-```
+**Frontend authorization**
 
-Guards always check **permission keys** (`"users:read"`), never role names — a role is only ever used to assign permissions, never checked directly in a guard.
+1. `AuthProvider` loads the current user from `/api/v1/auth/me`.
+2. `RequireAuth` protects protected route trees and redirects unauthenticated users to `/login`.
+3. `RequirePermission` wraps protected feature routes and redirects unauthorized users to `/forbidden`.
+4. `PermissionGate` hides or shows UI inside an already-authenticated page without blocking navigation.
 
 ---
 
 ## Common Tasks
 
-| Task | File |
+| Task | What to change |
 |---|---|
-| Add a new permission | add to `PERMISSIONS` in `seed.ts`, assign to a role, run `npm run prisma:seed` |
-| Protect a new backend route | `requireAuth, requirePermission("key")` in its route file |
-| Protect a new frontend route | wrap it with `<RequirePermission permission="key" />` in `routes/protectedRoutes.tsx` |
-| Hide a nav item / button | `<PermissionGate permission="key">` |
-| Change what a role grants | edit `ROLES[...].permissions` in `seed.ts`, re-seed |
+| Add a new permission | Update `PERMISSIONS` in `back-end/prisma/seed.ts`, assign it to roles, then run `npm run prisma:seed` in `back-end/` |
+| Protect a new backend route | Add `requireAuth` and `requirePermission("key")` to the route in `back-end/src/routes/*.ts` |
+| Protect a new frontend route | Wrap the feature route in `front-end/src/routes/protectedRoutes.tsx` with `<RequirePermission permission="key" />` |
+| Conditionally render UI | Use `<PermissionGate permission="key">...</PermissionGate>` in the frontend |
+| Change role permissions | Update `ROLES[...]` in `back-end/prisma/seed.ts` and re-run seeding |
+| Change user payload permissions | Update `back-end/src/mappers/user.mapper.ts` and frontend `front-end/src/auth/types/auth.types.ts` |
 
 ---
 

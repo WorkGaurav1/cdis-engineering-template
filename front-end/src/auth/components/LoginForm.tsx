@@ -172,7 +172,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-95 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
         >
           {isSubmitting && (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">

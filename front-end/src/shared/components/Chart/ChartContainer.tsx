@@ -4,6 +4,8 @@ import { ResponsiveContainer } from "recharts";
 interface ChartContainerProps {
   title?: string;
   height?: number;
+  /** Extra content rendered below the chart, inside the same card — e.g. a manual legend. */
+  footer?: ReactNode;
   children: ReactNode;
 }
 
@@ -12,13 +14,14 @@ interface ChartContainerProps {
  * styling, optional title, and a ResponsiveContainer so charts resize
  * with their parent rather than needing a fixed pixel width.
  */
-export function ChartContainer({ title, height = 300, children }: ChartContainerProps) {
+export function ChartContainer({ title, height = 300, footer, children }: ChartContainerProps) {
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4">
       {title && <h3 className="mb-3 text-sm font-medium text-gray-700">{title}</h3>}
       <ResponsiveContainer width="100%" height={height}>
         {children}
       </ResponsiveContainer>
+      {footer}
     </div>
   );
 }

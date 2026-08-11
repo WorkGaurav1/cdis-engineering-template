@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider } from "@/auth/context";
+import { ThemeProvider } from "@/app/shell/theme";
 
 import { queryClient } from "./queryClient";
 
@@ -15,9 +16,11 @@ export function AppProviders({
 }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

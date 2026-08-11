@@ -18,8 +18,9 @@
  * -----------------------------------------------------------------------------
  */
 
-import { Menu, Sun } from "lucide-react";
+import { Menu, MoonStar } from "lucide-react";
 
+import { useTheme } from "./theme";
 import NavSearch from "./NavSearch";
 import NotificationsMenu from "./NotificationsMenu";
 import ProfileMenu from "./ProfileMenu";
@@ -29,45 +30,35 @@ interface NavbarProps {
 }
 
 function Navbar({ onMenuClick }: NavbarProps) {
+    const { theme, toggleTheme } = useTheme();
+
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-slate-900 px-4 md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 dark:border-white/10 dark:bg-slate-900 md:px-6">
             <button
                 type="button"
                 onClick={onMenuClick}
                 aria-label="Open navigation menu"
-                className="rounded-md p-2 text-slate-400 hover:bg-white/5 hover:text-white md:hidden"
+                className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white md:hidden"
             >
                 <Menu aria-hidden="true" className="h-5 w-5" />
             </button>
-
-            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm">
-                <img src="/cdis_logo.png" alt="CDIS" className="h-full w-full object-contain" />
-            </span>
-
-            <select
-                defaultValue="CDIS Standard Project"
-                aria-label="Project"
-                className="hidden rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary/40 sm:block"
-            >
-                <option>CDIS Standard Project</option>
-            </select>
 
             <div className="ml-auto flex items-center gap-2">
                 <NavSearch />
                 <NotificationsMenu />
 
                 {/*
-                  Decorative only — a real light/dark toggle would mean
-                  theming every page in the app, not just this chrome,
-                  which is out of scope here. Left as a visible affordance
-                  rather than silently dropped, but intentionally inert.
+                  Shell-only toggle: switches Sidebar/Navbar chrome
+                  between light and dark (ThemeProvider in
+                  app/shell/theme). Page content is unaffected.
                 */}
                 <button
                     type="button"
-                    aria-label="Toggle theme"
-                    className="hidden rounded-md p-2 text-slate-400 hover:bg-white/5 hover:text-white sm:block"
+                    onClick={toggleTheme}
+                    aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+                    className="hidden rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white sm:block"
                 >
-                    <Sun aria-hidden="true" className="h-5 w-5" />
+                    <MoonStar aria-hidden="true" className="h-5 w-5" />
                 </button>
 
                 <ProfileMenu />

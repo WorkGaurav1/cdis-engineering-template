@@ -1,5 +1,6 @@
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart as RechartsLineChart,
   Tooltip,
@@ -8,24 +9,18 @@ import {
 } from "recharts";
 
 import { ChartContainer } from "./ChartContainer";
+import { DEFAULT_CHART_COLORS, type ChartSeries } from "./chartSeries";
 
 interface LineChartProps<T extends object> {
   data: T[];
   xKey: Extract<keyof T, string>;
-  yKey: Extract<keyof T, string>;
+  /** One line per series. */
+  series: ChartSeries<T>[];
   title?: string;
   height?: number;
-  color?: string;
 }
 
-export function LineChart<T extends object>({
-  data,
-  xKey,
-  yKey,
-  title,
-  height,
-  color = "#c10003",
-}: LineChartProps<T>) {
+export function LineChart<T extends object>({ data, xKey, series, title, height }: LineChartProps<T>) {
   return (
     <ChartContainer title={title} height={height}>
       <RechartsLineChart data={data}>
@@ -33,7 +28,18 @@ export function LineChart<T extends object>({
         <XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
         <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
         <Tooltip />
-        <Line type="monotone" dataKey={yKey} stroke={color} strokeWidth={2} dot={{ r: 3 }} />
+        {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
+        {series.map((s, index) => (
+          <Line
+            key={s.key}
+            type="monotone"
+            dataKey={s.key}
+            name={s.name ?? s.key}
+            stroke={s.color ?? DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length]}
+            strokeWidth={2}
+            dot={{ r: 3 }}
+          />
+        ))}
       </RechartsLineChart>
     </ChartContainer>
   );

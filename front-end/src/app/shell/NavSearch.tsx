@@ -51,7 +51,7 @@ function NavSearch() {
                 <div className="relative w-40 sm:w-72">
                     <Search
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 left-2.5 my-auto h-4 w-4 text-slate-500"
+                        className="pointer-events-none absolute inset-y-0 left-2.5 my-auto h-4 w-4 text-slate-400 dark:text-slate-500"
                     />
                     <input
                         ref={inputRef}
@@ -60,9 +60,9 @@ function NavSearch() {
                         onChange={(event) => { setQuery(event.target.value); }}
                         placeholder="Search anything..."
                         aria-label="Search navigation"
-                        className="w-full rounded-md border border-white/10 bg-white/5 py-1.5 pl-8 pr-12 text-sm text-white placeholder:text-slate-500 focus:border-primary focus:bg-slate-800 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 bg-slate-100 py-1.5 pl-8 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
                     />
-                    <kbd className="pointer-events-none absolute inset-y-0 right-2 my-auto hidden h-fit rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:block">
+                    <kbd className="pointer-events-none absolute inset-y-0 right-2 my-auto hidden h-fit rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:border-white/10 sm:block">
                         &#8984;K
                     </kbd>
                 </div>

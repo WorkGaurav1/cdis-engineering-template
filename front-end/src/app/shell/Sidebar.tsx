@@ -21,7 +21,7 @@
  */
 
 import { Dialog } from "radix-ui";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { PermissionGate } from "@/auth";
@@ -48,7 +48,11 @@ function NavigationLink({
                 className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                         collapsed ? "justify-center" : ""
-                    } ${isActive ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`
+                    } ${
+                        isActive
+                            ? "bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white"
+                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                    }`
                 }
             >
                 {Icon && <Icon aria-hidden="true" className="h-4 w-4 flex-shrink-0" />}
@@ -84,10 +88,27 @@ function SidebarBrand({ collapsed }: { collapsed?: boolean }) {
             </span>
             {!collapsed && (
                 <div className="leading-tight">
-                    <div className="text-sm font-bold tracking-wide text-white">CDIS</div>
-                    <div className="text-[10px] font-semibold tracking-widest text-slate-400">DASHBOARD</div>
+                    <div className="text-sm font-bold tracking-wide text-slate-900 dark:text-white">CDIS</div>
+                    <div className="text-[10px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">
+                        DASHBOARD
+                    </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function SidebarCollapseToggle({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+    return (
+        <div className="flex items-center justify-start px-1 pb-2">
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+            >
+                <Menu aria-hidden="true" className="h-5 w-5" />
+            </button>
         </div>
     );
 }
@@ -104,40 +125,24 @@ function Sidebar({ mobileOpen, onMobileOpenChange, collapsed, onCollapsedChange 
         <>
             {/* Desktop: static, always visible */}
             <aside
-                className={`hidden md:fixed md:inset-y-0 md:flex md:flex-col md:border-r md:border-white/10 md:bg-slate-900 md:p-4 md:transition-[width] md:duration-200 ${
+                className={`hidden md:fixed md:inset-y-0 md:flex md:flex-col md:border-r md:border-slate-200 md:bg-white md:p-4 md:transition-[width] md:duration-200 dark:md:border-white/10 dark:md:bg-slate-900 ${
                     collapsed ? "md:w-20" : "md:w-64"
                 }`}
             >
+                <SidebarCollapseToggle collapsed={collapsed} onToggle={() => { onCollapsedChange(!collapsed); }} />
+
                 <SidebarBrand collapsed={collapsed} />
 
                 <div className="mt-4 flex flex-1 flex-col">
                     <SidebarNav collapsed={collapsed} />
                 </div>
-
-                <button
-                    type="button"
-                    onClick={() => { onCollapsedChange(!collapsed); }}
-                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    className={`flex items-center gap-2 border-t border-white/10 pt-3 text-sm font-medium text-slate-400 hover:text-white ${
-                        collapsed ? "justify-center" : ""
-                    }`}
-                >
-                    {collapsed ? (
-                        <ChevronsRight aria-hidden="true" className="h-4 w-4" />
-                    ) : (
-                        <>
-                            <ChevronsLeft aria-hidden="true" className="h-4 w-4" />
-                            Collapse
-                        </>
-                    )}
-                </button>
             </aside>
 
             {/* Mobile: accessible slide-over drawer (never collapsed) */}
             <Dialog.Root open={mobileOpen} onOpenChange={onMobileOpenChange}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 md:hidden" />
-                    <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 p-4 shadow-lg md:hidden">
+                    <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white p-4 shadow-lg dark:bg-slate-900 md:hidden">
                         <Dialog.Title className="sr-only">Navigation menu</Dialog.Title>
                         <SidebarBrand />
                         <div className="mt-4 flex flex-1 flex-col">

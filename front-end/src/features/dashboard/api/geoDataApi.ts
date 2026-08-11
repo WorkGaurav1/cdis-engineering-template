@@ -18,12 +18,15 @@ export interface StateMetric {
 }
 
 /**
- * Static India district-boundary GeoJSON served from public/ — 760
- * districts, geometry simplified (~15%) from an open dataset
- * (udit-001/india-maps-data, itself derived from GADM) down to ~288KB
- * so it loads quickly and never touches the JS bundle. district-level
- * detail is used (rather than a dissolved state outline) specifically
- * so state AND district borders both render exactly.
+ * Static India district-boundary GeoJSON served from public/ — 735
+ * districts across all 36 states/UTs, sourced from geoBoundaries'
+ * government-derived ADM2 layer (lgdirectory.gov.in via Pathways Data,
+ * https://www.geoboundaries.org), lightly simplified (~25%, ~116
+ * points/district on average) to keep real coastline/border detail
+ * while staying a reasonable download. Served from public/ rather than
+ * bundled so it never touches the JS bundle. District-level detail is
+ * used (rather than a dissolved state outline) specifically so state
+ * AND district borders both render exactly.
  */
 export const geoDataApi = {
   async listIndiaDistricts(): Promise<FeatureCollection<Polygon | MultiPolygon, IndiaDistrictProperties>> {
