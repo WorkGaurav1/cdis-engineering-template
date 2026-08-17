@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import type { LoginInput, RegisterInput } from "../dto/auth.dto.js";
+import type { LoginInput, RegisterInput } from "../data-transfer-object/auth.dto.js";
 import { UnauthorizedError } from "../errors/index.js";
 import { clearAuthCookies, REFRESH_TOKEN_COOKIE, setAuthCookies } from "../lib/cookies.js";
 import { authService } from "../services/auth.service.js";

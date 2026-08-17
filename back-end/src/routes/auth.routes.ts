@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { login, logout, me, refresh, register } from "../controllers/auth.controller.js";
-import { loginSchema, registerSchema } from "../dto/auth.dto.js";
+import { loginSchema, registerSchema } from "../data-transfer-object/auth.dto.js";
 import { requireCsrfToken } from "../middlewares/csrf.js";
 import { loginRateLimiter } from "../middlewares/rateLimiters.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
