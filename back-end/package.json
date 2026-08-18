@@ -22,6 +22,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
     "@prisma/client": "^7.9.1",
