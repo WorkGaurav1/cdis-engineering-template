@@ -91,10 +91,14 @@ jobs:
       # migrated + seeded — used by Playwright/E2E further down) and
       # `cdis_test` (migrated only, never seeded — the backend's
       # integration tests manage their own fixtures per testing.md).
+      # MySQL's official image only grants MYSQL_USER privileges on
+      # MYSQL_DATABASE ("cdis") — a database created afterward
+      # (cdis_test) needs its own explicit GRANT, or the `cdis` user
+      # gets P1010 "access denied" the moment anything touches it.
       - name: Prepare databases
         working-directory: back-end
         run: |
-          mysql -h127.0.0.1 -P3308 -uroot -pcdis_root_dev_password -e "CREATE DATABASE IF NOT EXISTS cdis_test;"
+          mysql -h127.0.0.1 -P3308 -uroot -pcdis_root_dev_password -e "CREATE DATABASE IF NOT EXISTS cdis_test; GRANT ALL PRIVILEGES ON cdis_test.* TO 'cdis'@'%'; FLUSH PRIVILEGES;"
           npx prisma migrate deploy
           npx prisma db seed
           DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma migrate deploy
