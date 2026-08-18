@@ -47,6 +47,13 @@ jobs:
         working-directory: back-end
         run: npm ci
 
+      # generated/ is gitignored (it's a build artifact, not source) —
+      # a fresh checkout has no Prisma Client until this runs. Needed
+      # before type-check, tests, and the seed step below all import it.
+      - name: Generate Prisma Client
+        working-directory: back-end
+        run: npx prisma generate
+
       - name: Install frontend dependencies
         working-directory: front-end
         run: npm ci
