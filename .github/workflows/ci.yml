@@ -87,10 +87,11 @@ jobs:
           VITE_API_BASE_URL=http://localhost:4000/api/v1
           EOF
 
-      # Sets up both databases this job needs: `cdis` (the dev DB,
-      # migrated + seeded — used by Playwright/E2E further down) and
-      # `cdis_test` (migrated only, never seeded — the backend's
-      # integration tests manage their own fixtures per testing.md).
+      # Sets up both databases this job needs: `cdis` (the dev DB, used
+      # by Playwright/E2E further down) and `cdis_test` (the backend's
+      # integration tests, e.g. auth.integration.test.ts's admin-role
+      # flow, look up seeded roles directly — both need migrating AND
+      # seeding, not just migrating.
       # MySQL's official image only grants MYSQL_USER privileges on
       # MYSQL_DATABASE ("cdis") — a database created afterward
       # (cdis_test) needs its own explicit GRANT, or the `cdis` user
@@ -102,6 +103,7 @@ jobs:
           npx prisma migrate deploy
           npx prisma db seed
           DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma migrate deploy
+          DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma db seed
 
       # ---- lint ----
       - name: Lint backend
