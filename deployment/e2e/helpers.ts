@@ -1,6 +1,10 @@
 import type { Page } from "@playwright/test";
 
-const BACKEND_URL = "http://localhost:4000/api/v1";
+// The reverse proxy fronts both containers on one origin — /api/* is
+// proxied straight to the backend (see reverse-proxy/apache/httpd.conf).
+// There's no separate backend port to reach directly anymore.
+const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:8080";
+const API_URL = `${BASE_URL}/api/v1`;
 
 export interface TestUser {
   email: string;
@@ -18,7 +22,7 @@ export async function registerTestUser(label: string): Promise<TestUser> {
   const email = `e2e-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
   const user: TestUser = { email, password: "correct-horse-battery-staple", name: `E2E ${label}` };
 
-  const response = await fetch(`${BACKEND_URL}/auth/register`, {
+  const response = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(user),

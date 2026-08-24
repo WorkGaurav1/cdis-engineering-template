@@ -39,7 +39,7 @@ Reference implementation: `user.repository.ts` → `user.service.ts` → `user.c
 | New table | `prisma/schema.prisma`, then `npm run prisma:migrate` |
 | Data access | `repositories/<resource>.repository.ts` |
 | Business rules | `services/<resource>.service.ts` |
-| Request validation | `dto/<resource>.dto.ts` |
+| Request validation | `data-transfer-object/<resource>.dto.ts` |
 | HTTP handlers | `controllers/<resource>.controller.ts` |
 | Route + guards | `routes/<resource>.routes.ts`, mount in `routes/index.ts` |
 | Restrict by permission | add the permission key to `prisma/seed.ts`, apply `requirePermission("key")` in the route |

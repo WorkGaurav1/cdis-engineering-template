@@ -36,12 +36,9 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
-            package-lock.json
             back-end/package-lock.json
             front-end/package-lock.json
-
-      - name: Install root dependencies (Playwright)
-        run: npm ci
+            deployment/package-lock.json
 
       - name: Install backend dependencies
         working-directory: back-end
@@ -78,34 +75,38 @@ jobs:
           ACCOUNT_LOCKOUT_DURATION_MINUTES=15
           EOF
 
+      # Real production value (a relative path, resolved against
+      # whatever origin the browser loads the page from) — this is a
+      # quality-gate build, not a served-and-tested-locally one (E2E
+      # further down runs the fully containerized stack instead), so
+      # it should build with the same value production actually uses.
       - name: Write frontend .env
         working-directory: front-end
         run: |
           cat > .env <<'EOF'
           VITE_APP_NAME=CDIS
           VITE_APP_ENV=production
-          VITE_API_BASE_URL=http://localhost:4000/api/v1
+          VITE_API_BASE_URL=/api/v1
           EOF
 
-      # Sets up both databases this job needs: `cdis` (the dev DB, used
-      # by Playwright/E2E further down) and `cdis_test` (the backend's
-      # integration tests, e.g. auth.integration.test.ts's admin-role
-      # flow, look up seeded roles directly — both need migrating AND
-      # seeding, not just migrating.
+      # Only `cdis_test` is needed here — the backend's integration
+      # tests (e.g. auth.integration.test.ts's admin-role flow) look up
+      # seeded roles directly. The E2E stage further down runs its own
+      # fully containerized MySQL via deployment/compose/compose.yaml,
+      # so there's no need to also prep a "cdis" dev database on this
+      # services: container.
       # MySQL's official image only grants MYSQL_USER privileges on
-      # MYSQL_DATABASE ("cdis") — a database created afterward
-      # (cdis_test) needs its own explicit GRANT, or the `cdis` user
-      # gets P1010 "access denied" the moment anything touches it.
-      - name: Prepare databases
+      # MYSQL_DATABASE ("cdis") — cdis_test, created afterward, needs
+      # its own explicit GRANT, or the `cdis` user gets P1010 "access
+      # denied" the moment anything touches it.
+      - name: Prepare test database
         working-directory: back-end
         run: |
           mysql -h127.0.0.1 -P3308 -uroot -pcdis_root_dev_password -e "CREATE DATABASE IF NOT EXISTS cdis_test; GRANT ALL PRIVILEGES ON cdis_test.* TO 'cdis'@'%'; FLUSH PRIVILEGES;"
-          npx prisma migrate deploy
-          npx prisma db seed
           DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma migrate deploy
           DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma db seed
 
-      # ---- lint ----
+      #  lint 
       - name: Lint backend
         working-directory: back-end
         run: npm run lint
@@ -114,7 +115,7 @@ jobs:
         working-directory: front-end
         run: npm run lint
 
-      # ---- type check ----
+      #  type check 
       - name: Type-check backend
         working-directory: back-end
         run: npm run build # back-end's "build" script *is* `tsc --noEmit` — see docs/standards/deployment.md
@@ -123,7 +124,7 @@ jobs:
         working-directory: front-end
         run: npx tsc -b
 
-      # ---- tests ----
+      #  tests 
       - name: Backend tests (unit + integration)
         working-directory: back-end
         run: npm run test:all
@@ -132,16 +133,46 @@ jobs:
         working-directory: front-end
         run: npm run test
 
-      # ---- build ----
+      #  build 
       - name: Build frontend
         working-directory: front-end
         run: npm run build
 
-      # ---- Playwright (E2E) ----
+      #  Playwright (E2E)
+      # Runs against the real containerized stack (deployment/compose/
+      # compose.yaml — MySQL + backend + frontend + Apache reverse
+      # proxy), not locally-started dev processes, so this exercises
+      # the same routing/cookie/build-artifact path production uses.
+      - name: Install deployment dependencies
+        working-directory: deployment
+        run: npm ci
+
       - name: Install Playwright browsers
+        working-directory: deployment
         run: npx playwright install --with-deps chromium
 
+      # CI-only values; BACKEND_BUILD_CONTEXT/FRONTEND_BUILD_CONTEXT
+      # point compose.yaml at this checkout's own back-end/front-end
+      # rather than the standalone cdis-deployment repo's default
+      # sibling-clone layout — see compose.yaml's comment.
+      - name: Write deployment compose .env
+        working-directory: deployment/compose
+        run: |
+          cat > .env <<'EOF'
+          BACKEND_BUILD_CONTEXT=../../back-end
+          FRONTEND_BUILD_CONTEXT=../../front-end
+          PUBLIC_ORIGIN=http://localhost:8080
+          DB_PASSWORD=ci-only-db-password
+          DB_ROOT_PASSWORD=ci-only-db-root-password
+          JWT_ACCESS_SECRET=ci-only-secret-never-used-outside-github-actions
+          EOF
+
+      - name: Bring up the stack
+        working-directory: deployment
+        run: ./scripts/e2e-up.sh
+
       - name: Run E2E tests
+        working-directory: deployment
         run: npm run test:e2e
         env:
           CI: true
@@ -151,10 +182,20 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: deployment/playwright-report/
           retention-days: 7
 
-      # ---- coverage ----
+      - name: Dump container logs on failure
+        if: failure()
+        working-directory: deployment/compose
+        run: docker compose -f compose.yaml logs
+
+      - name: Tear down the stack
+        if: always()
+        working-directory: deployment/compose
+        run: docker compose -f compose.yaml down -v
+
+      # coverage 
       # Re-runs with coverage instrumentation so a coverage-threshold
       # failure shows up as its own distinct, clearly-labeled stage
       # rather than being folded into the "tests" result above.
@@ -166,7 +207,7 @@ jobs:
         working-directory: front-end
         run: npm run test:coverage
 
-      # ---- security checks ----
+      # security checks 
       - name: Audit backend dependencies
         working-directory: back-end
         run: npm audit --audit-level=high

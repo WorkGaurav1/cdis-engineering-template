@@ -17,10 +17,12 @@ Root layout:
 ```
 front-end/
 back-end/
+deployment/
 docs/
-docker-compose.yml
 README.md
 ```
+
+`deployment/` owns Docker Compose (local, production, HTTPS overlays), the Apache reverse proxy config, deploy/rollback/health-check scripts, and the cross-application Playwright E2E suite — see [Deployment Standards](../standards/deployment.md) and [Docker Standards](../standards/docker.md).
 
 ---
 
@@ -60,7 +62,7 @@ features/<feature>/
 |---|---|
 | `config/` | validated environment config (`env.ts`) |
 | `controllers/` | HTTP handlers, request/response mapping |
-| `dto/` | Zod request validation schemas |
+| `data-transfer-object/` | Zod request validation schemas |
 | `errors/` | application error classes and typed error handling |
 | `lib/` | Prisma client, cookie helpers, logger |
 | `mappers/` | response-safe data mapping, e.g. `toSafeUser` |

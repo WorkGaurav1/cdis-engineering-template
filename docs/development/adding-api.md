@@ -15,7 +15,7 @@ The layer-by-layer steps for a new endpoint — not a new resource from scratch 
 - `back-end/src/routes/<resource>.routes.ts`
 - `back-end/src/controllers/<resource>.controller.ts`
 - `back-end/src/services/<resource>.service.ts`
-- `back-end/src/dto/<resource>.dto.ts` (if the endpoint takes a body)
+- `back-end/src/data-transfer-object/<resource>.dto.ts` (if the endpoint takes a body)
 - `front-end/src/features/<feature>/api/<feature>Api.ts`
 
 ---
@@ -40,7 +40,7 @@ Reference: `GET /api/v1/users` — `user.routes.ts` → `listUsers` in `user.con
 | 2. Add the controller function | `<resource>.controller.ts` — call `sendSuccess(res, data, statusCode)` |
 | 3. Add the service method | `<resource>.service.ts` |
 | 4. Add a repository method if needed | `repositories/<resource>.repository.ts` |
-| 5. Validate the body, if any | Zod schema in `dto/<resource>.dto.ts`, `validateBody(schema)` in the route |
+| 5. Validate the body, if any | Zod schema in `data-transfer-object/<resource>.dto.ts`, `validateBody(schema)` in the route |
 | 6. Call it from the frontend | add a method to `features/<feature>/api/<feature>Api.ts` using `apiClient.get/post/put/patch/delete` |
 
 ---

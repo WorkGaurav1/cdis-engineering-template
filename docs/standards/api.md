@@ -81,7 +81,7 @@ Describe how backend routes behave and how frontend code consumes API responses.
 | Task | What to change |
 |---|---|
 | Add a new endpoint | Add route in `back-end/src/routes/*.ts`, controller, service, repository, and DTO schema |
-| Validate request body | Add a Zod schema in `back-end/src/dto/` and apply `validateBody(schema)` in the route |
+| Validate request body | Add a Zod schema in `back-end/src/data-transfer-object/` and apply `validateBody(schema)` in the route |
 | Add a new frontend API call | Create or update `front-end/src/features/<feature>/api/<name>Api.ts` using `apiClient` |
 | Customize error handling | Update `back-end/src/middlewares/errorHandler.ts` and add AppError subclasses in `back-end/src/errors/` |
 | Inspect API shape | Check `front-end/src/api/types.ts` and backend response helpers |

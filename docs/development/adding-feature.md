@@ -29,7 +29,7 @@ features/<name>/
 └── index.ts             # re-exports the page + the module
 ```
 
-The module is added to the `featureModules` array in **both** `protectedRoutes.tsx` and `navigationConfig.ts` — both derive their route tree / sidebar list from the same array, so they can't drift out of sync. Deleting a feature folder is: remove its folder, remove its one entry from both arrays.
+`protectedRoutes.tsx` and `navigationConfig.ts` each keep their own `featureModules` array — every feature needs a route (`protectedRoutes.tsx`), but not every feature gets a sidebar entry (`users`/`settings` are deliberately routed-but-not-in-nav). List a new feature in `protectedRoutes.tsx` always, and in `navigationConfig.ts` only if it should appear in the sidebar. See [Removing a Feature](removing-a-feature.md) for the reverse of this.
 
 ---
 
@@ -42,7 +42,7 @@ The module is added to the `featureModules` array in **both** `protectedRoutes.t
 | 3. Add its own data fetch | `features/<name>/api/<name>Api.ts` (calls `apiClient`, not another feature) |
 | 4. Describe the route + nav entry | `features/<name>/<name>.module.tsx` |
 | 5. Export both | `features/<name>/index.ts` |
-| 6. Register | add the module to the array in `routes/protectedRoutes.tsx` and `config/navigation/navigationConfig.ts` |
+| 6. Register | add the module to `routes/protectedRoutes.tsx`'s `featureModules` array (always); add it to `config/navigation/navigationConfig.ts`'s `featureModules` array too, only if it should show up in the sidebar |
 | Gate it behind a permission | set `permission: "resource:action"` on the `FeatureModule` — both the route and the nav link respect it automatically |
 
 ---
@@ -52,6 +52,7 @@ The module is added to the `featureModules` array in **both** `protectedRoutes.t
 - [Project Structure](../architecture/project-structure.md)
 - [Authorization](../architecture/authorization.md)
 - [Adding an API](adding-api.md)
+- [Removing a Feature](removing-a-feature.md)
 
 ---
 

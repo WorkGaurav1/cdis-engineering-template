@@ -17,11 +17,16 @@ export const tokenService = {
   signAccessToken(userId: string): string {
     return jwt.sign({ sub: userId } satisfies AccessTokenPayload, env.auth.jwtAccessSecret, {
       expiresIn: env.auth.jwtAccessExpiresIn as jwt.SignOptions["expiresIn"],
+      algorithm: "HS256",
     });
   },
 
   verifyAccessToken(token: string): AccessTokenPayload {
-    return jwt.verify(token, env.auth.jwtAccessSecret) as AccessTokenPayload;
+    // Pinning the allow-list (rather than relying on jsonwebtoken's
+    // default) means a token signed with any other algorithm is
+    // rejected outright, instead of only working "because nothing else
+    // is configured to sign one."
+    return jwt.verify(token, env.auth.jwtAccessSecret, { algorithms: ["HS256"] }) as AccessTokenPayload;
   },
 
   /**

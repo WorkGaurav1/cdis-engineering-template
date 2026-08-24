@@ -16,7 +16,7 @@ Capture the actual runtime architecture and integration points for this project.
 |---|---|---|
 | Frontend SPA | `front-end/` | `5173` |
 | Backend API | `back-end/` | `4000` |
-| Database | `docker-compose.yml` | container `3306` |
+| Database | `deployment/compose/compose.yaml` (service `mysql`) | container `3306` |
 | Versioned API router | `back-end/src/routes/index.ts` | mounted at `/api/v1` |
 | Health router | `back-end/src/routes/health.routes.ts` | mounted at `/health` |
 
@@ -33,13 +33,15 @@ Backend Express app   (back-end/src/app.ts)
   ↓ middleware pipeline
 Prisma repository layer (back-end/src/repositories)
   ↓ MariaDB / MySQL
-Database container      (docker-compose.yml)
+Database container      (deployment/compose/compose.yaml)
 ```
 
 - The frontend runs as a Vite development server and communicates with the backend via REST.
 - The backend is a standalone Express app with a versioned API under `/api/v1`.
 - Health checks live outside API versioning at `/health`.
 - MySQL is intended for local development via `docker compose` and the repository uses Prisma with the MariaDB adapter.
+
+**In production** (see `deployment/`), this shape changes: an Apache httpd reverse proxy sits in front of both containers as a single public origin — `/api/*` routed to the backend container, everything else to the frontend container. The frontend is built with `VITE_API_BASE_URL=/api/v1` (a relative path), so there's no cross-origin CORS in production at all, only in local dev where the Vite server and the backend run on different ports. See [Deployment Standards](../standards/deployment.md).
 
 ---
 
@@ -89,7 +91,7 @@ Database container      (docker-compose.yml)
 | Task | Where |
 |---|---|
 | Add a new API versioned route | `back-end/src/routes/index.ts` |
-| Add a new backend resource | `back-end/src/controllers/`, `back-end/src/services/`, `back-end/src/repositories/`, `back-end/src/dto/` |
+| Add a new backend resource | `back-end/src/controllers/`, `back-end/src/services/`, `back-end/src/repositories/`, `back-end/src/data-transfer-object/` |
 | Add a new frontend feature | `front-end/src/features/` + register module in `front-end/src/routes/protectedRoutes.tsx` + nav in `front-end/src/config/navigation/navigationConfig.ts` |
 | Change the default API base URL | `front-end/src/config/appConfig.ts` |
 | Change CORS policy | `back-end/src/app.ts` and `.env` `CORS_ORIGIN` |
@@ -100,7 +102,7 @@ Database container      (docker-compose.yml)
 ## Commands
 
 ```bash
-docker compose up -d mysql
+docker compose -f deployment/compose/compose.yaml up -d mysql
 cd back-end && npm install
 cd front-end && npm install
 cd back-end && npm run dev

@@ -22,7 +22,7 @@ The security controls in place today, and where to find/modify each one.
 | Account lockout | `back-end/src/services/auth.service.ts` |
 | Session tokens | `back-end/src/lib/cookies.ts`, `services/token.service.ts` — see [Authentication](../architecture/authentication.md) |
 | Authorization | `back-end/src/middlewares/requirePermission.ts` — see [Authorization](../architecture/authorization.md) |
-| Input validation | `back-end/src/middlewares/validate.ts` + Zod schemas in `dto/` |
+| Input validation | `back-end/src/middlewares/validate.ts` + Zod schemas in `data-transfer-object/` |
 | Response sanitization | `back-end/src/mappers/user.mapper.ts` (`toSafeUser` strips `passwordHash`) |
 
 ---
@@ -42,7 +42,7 @@ The security controls in place today, and where to find/modify each one.
 | Task | File |
 |---|---|
 | Add a rate limiter to a new route | follow the pattern in `rateLimiters.ts`, apply as route middleware |
-| Add validation to a new endpoint | Zod schema in `dto/`, `validateBody(schema)` in the route |
+| Add validation to a new endpoint | Zod schema in `data-transfer-object/`, `validateBody(schema)` in the route |
 | Strip sensitive fields from a response | add/extend a mapper in `mappers/` |
 | Change password/lockout policy | `.env` — see [Environment Standards](environment.md) |
 

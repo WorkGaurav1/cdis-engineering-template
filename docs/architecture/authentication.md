@@ -21,7 +21,7 @@ Describe how this repository authenticates users, restores sessions, rotates ref
 | Cookie handling | `back-end/src/lib/cookies.ts` |
 | Auth guard | `back-end/src/middlewares/requireAuth.ts` |
 | CSRF guard | `back-end/src/middlewares/csrf.ts` |
-| Login validation | `back-end/src/dto/auth.dto.ts` |
+| Login validation | `back-end/src/data-transfer-object/auth.dto.ts` |
 | App config | `back-end/src/config/env.ts` |
 | React auth state | `front-end/src/auth/context/AuthProvider.tsx` |
 | Login page | `front-end/src/auth/pages/LoginPage.tsx` |
