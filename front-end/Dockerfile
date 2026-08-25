@@ -21,7 +21,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 # ---- runtime ----
-FROM nginx:1.29-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 
 # Runs as the (already-present, base-image) nginx user rather than root.
 # setcap lets that unprivileged user still bind port 80 — the alternative,
