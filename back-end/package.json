@@ -22,6 +22,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
   "overrides": {
     "deepmerge-ts": "^8.0.0"
   },

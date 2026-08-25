@@ -15,7 +15,10 @@ export const CSRF_HEADER = "x-csrf-token";
  */
 const REFRESH_COOKIE_PATH = "/api/v1/auth";
 
-const secure = env.nodeEnv === "production";
+// "production" only would silently ship non-Secure cookies on a
+// staging deployment — env.ts allows "staging" as a valid NODE_ENV,
+// so it needs the same cookie hardening as production does.
+const secure = env.nodeEnv === "production" || env.nodeEnv === "staging";
 
 export function setAuthCookies(res: Response, tokens: { accessToken: string; refreshToken: string }): void {
   res.cookie(ACCESS_TOKEN_COOKIE, tokens.accessToken, {

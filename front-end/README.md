@@ -34,6 +34,8 @@ src/
 └── shared/                cross-feature components (Chart, Map, DataTable), utils
 ```
 
+**`dashboard`, `charts`, `graphs`, and `tables` are demonstration content** — backed by literal `/api/v1/demo/...` endpoints, meant to show real, working patterns for maps/charts/tables. Delete or replace them for a new project; see the CDIS Template repo's `docs/development/removing-a-feature.md`. `auth/`, `api/`, and `shared/` are foundational — keep those.
+
 ---
 
 ## Prerequisites

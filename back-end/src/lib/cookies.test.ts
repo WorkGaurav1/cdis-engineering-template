@@ -103,6 +103,19 @@ describe("setAuthCookies in production", () => {
     const [, , options] = vi.mocked(res.cookie).mock.calls[0]! as unknown as [string, string, { secure: boolean }];
     expect(options.secure).toBe(true);
   });
+
+  it("also marks cookies secure when NODE_ENV is staging", async () => {
+    vi.resetModules();
+    vi.stubEnv("NODE_ENV", "staging");
+
+    const { setAuthCookies: setAuthCookiesInStaging } = await import("./cookies.js");
+    const res = createMockResponse();
+
+    setAuthCookiesInStaging(res, tokens);
+
+    const [, , options] = vi.mocked(res.cookie).mock.calls[0]! as unknown as [string, string, { secure: boolean }];
+    expect(options.secure).toBe(true);
+  });
 });
 
 describe("clearAuthCookies", () => {

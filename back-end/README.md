@@ -44,6 +44,8 @@ prisma/
 └── seed.ts                    roles/permissions + demo data (idempotent)
 ```
 
+**`routes/demo.routes.ts` and the `Demo*` Prisma models (`DemoStateMetric`, `DemoChartDataset`, `DemoChartPoint`, `DemoTableDataset`, `DemoTableRow`) are demonstration content** — they exist to give the frontend's dashboard/charts/graphs/tables features real, working data to show off the patterns. Delete or replace them for a new project; see the CDIS Template repo's `docs/development/removing-a-feature.md`. Everything else here (auth, users, the layering itself) is foundational.
+
 ---
 
 ## Prerequisites
