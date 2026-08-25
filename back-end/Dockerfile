@@ -2,7 +2,7 @@
 
 # ---- deps: full install (incl. devDependencies) so `prisma generate`
 # and the eventual `npm run build` type-check can run ----
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -11,13 +11,13 @@ COPY prisma.config.ts ./
 RUN npx prisma generate
 
 # ---- prod-deps: production dependencies only, for the final image ----
-FROM node:22-alpine AS prod-deps
+FROM node:26-alpine AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 # ---- runtime ----
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
