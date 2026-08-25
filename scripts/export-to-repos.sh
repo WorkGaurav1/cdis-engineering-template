@@ -30,8 +30,16 @@ SIBLINGS_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
 # --delete` would wipe out each sibling's .github/workflows/ on every
 # export, since the monorepo's front-end/back-end/deployment folders
 # don't have one to copy from.
-EXCLUDES_APP=(--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='coverage/' --exclude='dist/' --exclude='generated/' --exclude='.env')
-EXCLUDES_DEPLOY=(--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='compose/.env' --exclude='compose/current-versions.env' --exclude='compose/previous-versions.env' --exclude='test-results/')
+# CONTRIBUTING.md/SECURITY.md/CODEOWNERS are also excluded: like
+# .github/, each sibling repo has its own standalone-appropriate
+# version of these, authored directly in that repo, with no equivalent
+# file inside this monorepo's front-end/back-end/deployment folders to
+# sync from. Without this exclude, `rsync --delete` silently deletes
+# them on every export, since the source side has nothing there at
+# all — this happened for real once, caught only because the sibling
+# repos' git status showed the deletions before they got committed.
+EXCLUDES_APP=(--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='coverage/' --exclude='dist/' --exclude='generated/' --exclude='.env' --exclude='/CONTRIBUTING.md' --exclude='/SECURITY.md' --exclude='/CODEOWNERS')
+EXCLUDES_DEPLOY=(--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='compose/.env' --exclude='compose/current-versions.env' --exclude='compose/previous-versions.env' --exclude='test-results/' --exclude='/CONTRIBUTING.md' --exclude='/SECURITY.md' --exclude='/CODEOWNERS')
 
 sync_one() {
   local source_dir="$1" target_name="$2" ; shift 2
