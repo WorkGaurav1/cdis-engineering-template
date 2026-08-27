@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 
 import { env } from "../config/index.js";
 import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError } from "../errors/index.js";
+import { prisma } from "../lib/prisma.js";
 import { toSafeUser, type SafeUser } from "../mappers/user.mapper.js";
 import { refreshTokenRepository } from "../repositories/refreshToken.repository.js";
 import { roleRepository } from "../repositories/role.repository.js";
@@ -54,8 +55,17 @@ export const authService = {
     }
 
     const passwordHash = await bcrypt.hash(input.password, env.auth.bcryptSaltRounds);
-    const created = await userRepository.create({ email: input.email, name: input.name, passwordHash });
-    await userRepository.assignRole(created.id, defaultRole.id);
+
+    // Atomic: a user created with no role assigned (e.g. a transient DB
+    // error between the two calls) would fail every subsequent
+    // permission check for that account, indistinguishable from a
+    // genuine authorization bug. $transaction rolls both back together
+    // if either fails, so this can't happen.
+    const created = await prisma.$transaction(async (tx) => {
+      const newUser = await userRepository.create({ email: input.email, name: input.name, passwordHash }, tx);
+      await userRepository.assignRole(newUser.id, defaultRole.id, tx);
+      return newUser;
+    });
 
     const user = await userRepository.findById(created.id);
 

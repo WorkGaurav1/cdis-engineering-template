@@ -30,6 +30,20 @@ vi.mock("../repositories/role.repository.js", () => ({
   },
 }));
 
+// register() wraps user creation + role assignment in prisma.$transaction()
+// for atomicity (see auth.service.ts) -- userRepository is already fully
+// mocked above, so the transaction callback's `tx` argument is never
+// really used for anything here; this just needs to actually invoke the
+// callback (with some object standing in for `tx`) rather than open a
+// real DB transaction, which would hang forever with no database to
+// connect to in a unit test.
+vi.mock("../lib/prisma.js", () => ({
+  prisma: {
+    $transaction: vi.fn((callback: (tx: unknown) => unknown) => callback({})),
+  },
+}));
+
+const { prisma } = await import("../lib/prisma.js");
 const { userRepository } = await import("../repositories/user.repository.js");
 const { refreshTokenRepository } = await import("../repositories/refreshToken.repository.js");
 const { roleRepository } = await import("../repositories/role.repository.js");
@@ -83,6 +97,25 @@ describe("authService.register", () => {
     const createCall = vi.mocked(userRepository.create).mock.calls[0]![0];
     expect(createCall.passwordHash).not.toBe("password123");
     expect(await bcrypt.compare("password123", createCall.passwordHash)).toBe(true);
+  });
+
+  it("creates the user and assigns the role atomically via prisma.$transaction — never two unwrapped calls that could leave a roleless user on partial failure", async () => {
+    vi.mocked(userRepository.findByEmail).mockResolvedValue(null);
+    vi.mocked(roleRepository.findByName).mockResolvedValue({ id: "role-1" } as never);
+    vi.mocked(userRepository.create).mockResolvedValue({ id: "user-1" } as never);
+    vi.mocked(userRepository.findById).mockResolvedValue(fakeUserWithRoles());
+
+    await authService.register({ email: "new@example.com", name: "New", password: "password123" }, context);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+
+    // Both repository calls must receive the *same* transaction client
+    // (the `tx` the $transaction callback was invoked with) as their
+    // second argument, not the module-level `prisma` singleton — that's
+    // what actually makes the two writes atomic, not just co-located.
+    const txArg = vi.mocked(userRepository.create).mock.calls[0]![1];
+    expect(txArg).toBeDefined();
+    expect(vi.mocked(userRepository.assignRole).mock.calls[0]![2]).toBe(txArg);
   });
 });
 

@@ -1,3 +1,4 @@
+import type { PrismaClient } from "../../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 
 export interface CreateUserInput {
@@ -34,14 +35,20 @@ export const userRepository = {
     });
   },
 
-  create(input: CreateUserInput) {
-    return prisma.user.create({
+  // `client` defaults to the module-level `prisma` singleton but accepts
+  // a transaction's `tx` too (only typed for the one delegate each
+  // function actually touches, so both the singleton and `tx` satisfy
+  // it structurally) -- lets authService.register() run create() +
+  // assignRole() atomically via prisma.$transaction(async (tx) => ...),
+  // without every other caller needing to know transactions exist.
+  create(input: CreateUserInput, client: Pick<PrismaClient, "user"> = prisma) {
+    return client.user.create({
       data: input,
     });
   },
 
-  assignRole(userId: string, roleId: string) {
-    return prisma.userRole.create({
+  assignRole(userId: string, roleId: string, client: Pick<PrismaClient, "userRole"> = prisma) {
+    return client.userRole.create({
       data: { userId, roleId },
     });
   },
