@@ -9,10 +9,9 @@ datasource db {
 
 /// A user account.
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique @db.VarChar(255)
-  name     String  @db.VarChar(255)
-  isActive Boolean @default(true)
+  id    String @id @default(uuid())
+  email String @unique @db.VarChar(255)
+  name  String @db.VarChar(255)
 
   passwordHash String @db.VarChar(255)
 
@@ -27,14 +26,6 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
-
-  createdById String?
-  updatedById String?
-  createdBy   User?   @relation("UserAudit_Created", fields: [createdById], references: [id])
-  updatedBy   User?   @relation("UserAudit_Updated", fields: [updatedById], references: [id])
-
-  createdUsers User[] @relation("UserAudit_Created")
-  updatedUsers User[] @relation("UserAudit_Updated")
 
   @@index([deletedAt])
   @@map("users")
