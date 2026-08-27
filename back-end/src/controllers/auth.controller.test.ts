@@ -102,14 +102,13 @@ describe("logout", () => {
 });
 
 describe("me", () => {
-  it("returns the currently authenticated user", async () => {
-    vi.mocked(authService.getCurrentUser).mockResolvedValue(safeUser);
-    const req = createMockRequest({ userId: "u1" });
+  it("returns req.user as loaded by requireAuth, with no further DB lookup", () => {
+    const req = createMockRequest({ userId: "u1", user: safeUser });
     const res = createMockResponse();
 
-    await me(req, res);
+    me(req, res);
 
-    expect(authService.getCurrentUser).toHaveBeenCalledWith("u1");
+    expect(authService.getCurrentUser).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ success: true, data: { user: safeUser } });
   });
 });
