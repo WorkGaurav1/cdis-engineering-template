@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import jwt from "jsonwebtoken";
 
 import { env } from "../config/index.js";
-import { tokenService } from "./token.service.js";
+import { ACCESS_TOKEN_EXPIRES_IN_MS, tokenService } from "./token.service.js";
 
 describe("tokenService.signAccessToken / verifyAccessToken", () => {
   it("signs a token that verifies back to the same user id", () => {
@@ -55,6 +55,21 @@ describe("tokenService.hashRefreshToken", () => {
     const b = tokenService.hashRefreshToken(tokenService.generateRefreshTokenValue());
 
     expect(a).not.toBe(b);
+  });
+});
+
+describe("ACCESS_TOKEN_EXPIRES_IN_MS", () => {
+  it("matches JWT_ACCESS_EXPIRES_IN parsed to milliseconds (test env: 15m)", () => {
+    expect(ACCESS_TOKEN_EXPIRES_IN_MS).toBe(15 * 60 * 1000);
+  });
+
+  it("is the exact lifetime a real signed access token actually has -- the bug this constant fixes was a cookie maxAge that could silently disagree with this", () => {
+    const before = Math.floor(Date.now() / 1000);
+    const token = tokenService.signAccessToken("user-123");
+    const decoded = jwt.decode(token) as { exp: number; iat: number };
+
+    expect(decoded.exp - decoded.iat).toBe(ACCESS_TOKEN_EXPIRES_IN_MS / 1000);
+    expect(decoded.exp).toBeGreaterThanOrEqual(before + ACCESS_TOKEN_EXPIRES_IN_MS / 1000);
   });
 });
 

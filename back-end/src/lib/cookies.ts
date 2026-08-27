@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { Response } from "express";
 
 import { env } from "../config/index.js";
+import { ACCESS_TOKEN_EXPIRES_IN_MS } from "../services/token.service.js";
 
 export const ACCESS_TOKEN_COOKIE = "access_token";
 export const REFRESH_TOKEN_COOKIE = "refresh_token";
@@ -26,7 +27,11 @@ export function setAuthCookies(res: Response, tokens: { accessToken: string; ref
     secure,
     sameSite: "lax",
     path: "/",
-    maxAge: 15 * 60 * 1000,
+    // Derived from the same JWT_ACCESS_EXPIRES_IN value the JWT itself
+    // is signed with (token.service.ts), not an independent literal —
+    // see that constant's docstring for why this can no longer drift
+    // from the token's real expiry the way a hardcoded number could.
+    maxAge: ACCESS_TOKEN_EXPIRES_IN_MS,
   });
 
   res.cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken, {

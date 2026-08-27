@@ -1,12 +1,26 @@
 import { randomBytes, createHash } from "node:crypto";
 
 import jwt from "jsonwebtoken";
+import ms from "ms";
 
 import { env } from "../config/index.js";
 
 export interface AccessTokenPayload {
   sub: string;
 }
+
+/**
+ * Access token lifetime in milliseconds, parsed from the same
+ * JWT_ACCESS_EXPIRES_IN string (e.g. "15m") jwt.sign()'s `expiresIn`
+ * option below consumes -- via `ms`, the exact same parser
+ * jsonwebtoken uses internally for that option (it's already jwt.sign's
+ * own dependency; importing it directly here guarantees identical
+ * parsing rather than a second, potentially-diverging implementation).
+ * lib/cookies.ts derives the access-token cookie's maxAge from this
+ * constant instead of a hardcoded literal, so the two can never drift
+ * apart the way they used to.
+ */
+export const ACCESS_TOKEN_EXPIRES_IN_MS = ms(env.auth.jwtAccessExpiresIn as ms.StringValue);
 
 /**
  * Token generation/verification. Deliberately stateless and DB-free —

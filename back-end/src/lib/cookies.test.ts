@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Response } from "express";
 
 import { env } from "../config/index.js";
+import { ACCESS_TOKEN_EXPIRES_IN_MS } from "../services/token.service.js";
 import {
   ACCESS_TOKEN_COOKIE,
   CSRF_COOKIE,
@@ -25,10 +26,20 @@ describe("setAuthCookies", () => {
 
     setAuthCookies(res, tokens);
 
+    // Regression guard for the bug this replaces: maxAge used to be a
+    // hardcoded 15 * 60 * 1000, independent of JWT_ACCESS_EXPIRES_IN --
+    // asserting against the same shared constant cookies.ts actually
+    // reads (not a second hardcoded literal here) means this test can't
+    // silently drift from reality the same way the old code could.
     expect(res.cookie).toHaveBeenCalledWith(
       ACCESS_TOKEN_COOKIE,
       "access-value",
-      expect.objectContaining({ httpOnly: true, sameSite: "lax", path: "/", maxAge: 15 * 60 * 1000 }),
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: ACCESS_TOKEN_EXPIRES_IN_MS,
+      }),
     );
   });
 
