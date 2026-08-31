@@ -26,7 +26,8 @@
     "node": ">=22"
   },
   "overrides": {
-    "deepmerge-ts": "^8.0.0"
+    "deepmerge-ts": "^8.0.0",
+    "mariadb": "3.5.3"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.9.1",
