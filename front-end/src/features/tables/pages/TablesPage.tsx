@@ -1,7 +1,9 @@
 import { useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { DataTable } from "@/shared";
+// Deep import, not the @/shared barrel — see DashboardPage.tsx for why
+// (this route's chunk would otherwise also pull in Leaflet/Recharts).
+import { DataTable } from "@/shared/components/DataTable";
 
 import { tablesApi, type DemoTableDataset } from "../api/tablesApi";
 import {

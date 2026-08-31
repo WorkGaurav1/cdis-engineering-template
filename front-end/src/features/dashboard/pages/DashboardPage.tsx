@@ -2,7 +2,12 @@ import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { FileText, FolderKanban, Info, Users as UsersIcon } from "lucide-react";
 
-import { GeoMap, type RegionLayer } from "@/shared";
+// Deep import, not the @/shared barrel: this page is lazy-loaded (see
+// dashboard.module.tsx), and @/shared's barrel re-exports Chart/
+// DataTable alongside Map — importing through it would pull Recharts
+// and TanStack Table into this route's chunk even though the
+// Dashboard page uses neither.
+import { GeoMap, type RegionLayer } from "@/shared/components/Map";
 
 import { geoDataApi, type IndiaDistrictProperties, type StateMetric } from "../api/geoDataApi";
 import { GradientLegend } from "../components/GradientLegend";

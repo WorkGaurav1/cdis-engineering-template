@@ -1,9 +1,12 @@
+import { lazy } from "react";
 import { LineChart } from "lucide-react";
 
 import type { FeatureModule } from "@/config/navigation/featureModule";
 import { ROUTE_SEGMENTS, ROUTES } from "@/routes/routeConfig";
 
-import GraphsPage from "./pages/GraphsPage";
+// Lazy — see dashboard.module.tsx for why.
+// eslint-disable-next-line react-refresh/only-export-components
+const GraphsPage = lazy(() => import("./pages/GraphsPage"));
 
 export const graphsModule: FeatureModule = {
   segment: ROUTE_SEGMENTS.GRAPHS,

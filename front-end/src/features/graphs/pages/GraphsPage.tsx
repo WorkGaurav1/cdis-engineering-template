@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { AreaChart, BarChart, LineChart, pivotChartPoints, type ChartSeries } from "@/shared";
+// Deep imports, not the @/shared barrel — see DashboardPage.tsx for
+// why (this route's chunk would otherwise also pull in Leaflet).
+import { AreaChart, BarChart, LineChart, type ChartSeries } from "@/shared/components/Chart";
+import { pivotChartPoints } from "@/shared/utils";
 
 import { graphsApi, type DemoChartDataset } from "../api/graphsApi";
 

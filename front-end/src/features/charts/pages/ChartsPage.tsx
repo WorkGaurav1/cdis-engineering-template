@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { PieChart, RadialChart } from "@/shared";
+// Deep import, not the @/shared barrel — see DashboardPage.tsx for why
+// (this route's chunk would otherwise also pull in Leaflet).
+import { PieChart, RadialChart } from "@/shared/components/Chart";
 
 import { chartsApi, type DemoChartDataset } from "../api/chartsApi";
 
