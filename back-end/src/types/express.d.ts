@@ -8,6 +8,13 @@ declare global {
       userId?: string;
       /** Populated (and cached) by requirePermission on first use per request. */
       user?: SafeUser;
+      /**
+       * Populated by validateQuery(schema) with the parsed/coerced
+       * result — not written back onto `query` itself, since Express's
+       * own ReqQuery type only allows string(-array) values, not the
+       * numbers/booleans a query schema typically coerces to.
+       */
+      validatedQuery?: unknown;
     }
   }
 }

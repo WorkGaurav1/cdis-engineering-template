@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 // Deep import, not the @/shared barrel — see DashboardPage.tsx for why
@@ -7,10 +8,18 @@ import { DataTable } from "@/shared/components/DataTable";
 import { userApi } from "../api/userApi";
 import { usersTableColumns } from "../usersTableColumns";
 
+const PAGE_SIZE = 20;
+
 function UsersPage() {
+  const [pageIndex, setPageIndex] = useState(0);
+
   const { data, isPending, isError } = useQuery({
-    queryKey: ["users", "list"],
-    queryFn: () => userApi.list(),
+    // pageIndex in the key: a page change is a genuinely different
+    // request, not a client-side re-slice of already-fetched data —
+    // GET /users is now paginated server-side (see back-end's
+    // pagination.dto.ts), so each page must be fetched separately.
+    queryKey: ["users", "list", pageIndex],
+    queryFn: () => userApi.list({ limit: PAGE_SIZE, offset: pageIndex * PAGE_SIZE }),
   });
 
   return (
@@ -21,7 +30,12 @@ function UsersPage() {
         data={data?.users ?? []}
         isLoading={isPending}
         emptyMessage={isError ? "Failed to load users." : "No users found."}
-        searchPlaceholder="Search users..."
+        serverPagination={{
+          pageIndex,
+          pageSize: PAGE_SIZE,
+          total: data?.pagination?.total ?? 0,
+          onPageChange: setPageIndex,
+        }}
       />
     </div>
   );

@@ -7,6 +7,7 @@ vi.mock("../lib/prisma.js", () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
     userRole: {
       create: vi.fn(),
@@ -24,17 +25,30 @@ beforeEach(() => {
 });
 
 describe("userRepository.findAll", () => {
-  it("queries non-deleted users, newest first, with roles/permissions included", async () => {
+  it("queries non-deleted users, newest first, with roles/permissions included, bounded by limit/offset", async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "u1" }] as never);
 
-    const result = await userRepository.findAll();
+    const result = await userRepository.findAll({ limit: 20, offset: 40 });
 
     expect(prisma.user.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null },
       include: rolesInclude,
       orderBy: { createdAt: "desc" },
+      take: 20,
+      skip: 40,
     });
     expect(result).toEqual([{ id: "u1" }]);
+  });
+});
+
+describe("userRepository.count", () => {
+  it("counts non-deleted users", async () => {
+    vi.mocked(prisma.user.count).mockResolvedValue(42);
+
+    const result = await userRepository.count();
+
+    expect(prisma.user.count).toHaveBeenCalledWith({ where: { deletedAt: null } });
+    expect(result).toBe(42);
   });
 });
 

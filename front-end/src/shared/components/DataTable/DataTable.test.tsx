@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -100,5 +100,87 @@ describe("DataTable", () => {
 
     await user.click(previousButton);
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
+  });
+});
+
+describe("DataTable with serverPagination", () => {
+  const page1Rows: Row[] = [{ name: "Charlie", age: 25 }];
+
+  it("hides the client-side search box — it would only search the current page, silently", () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={page1Rows}
+        searchPlaceholder="Search rows..."
+        serverPagination={{ pageIndex: 0, pageSize: 1, total: 3, onPageChange: () => {} }}
+      />,
+    );
+
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  it("does not re-slice `data` itself — renders every row it was given, trusting the caller already paginated it", () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={page1Rows}
+        serverPagination={{ pageIndex: 0, pageSize: 1, total: 3, onPageChange: () => {} }}
+      />,
+    );
+
+    expect(screen.getByText("Charlie")).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(2); // header + 1 data row
+  });
+
+  it("shows the real total (not just the current page's length) and computes page count from it", () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={page1Rows}
+        serverPagination={{ pageIndex: 0, pageSize: 1, total: 3, onPageChange: () => {} }}
+      />,
+    );
+
+    expect(screen.getByText("Page 1 of 3 (3 total)")).toBeInTheDocument();
+  });
+
+  it("calls onPageChange with the next/previous page index instead of paginating locally", async () => {
+    const user = userEvent.setup();
+    const onPageChange = vi.fn();
+    render(
+      <DataTable
+        columns={columns}
+        data={page1Rows}
+        serverPagination={{ pageIndex: 1, pageSize: 1, total: 3, onPageChange }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(onPageChange).toHaveBeenCalledWith(2);
+
+    await user.click(screen.getByRole("button", { name: "Previous" }));
+    expect(onPageChange).toHaveBeenCalledWith(0);
+  });
+
+  it("disables Previous on the first page and Next on the last page", () => {
+    const { rerender } = render(
+      <DataTable
+        columns={columns}
+        data={page1Rows}
+        serverPagination={{ pageIndex: 0, pageSize: 1, total: 3, onPageChange: () => {} }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
+
+    rerender(
+      <DataTable
+        columns={columns}
+        data={page1Rows}
+        serverPagination={{ pageIndex: 2, pageSize: 1, total: 3, onPageChange: () => {} }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
 });

@@ -10,11 +10,11 @@ beforeEach(() => {
 });
 
 describe("userApi.list", () => {
-  it("gets /users", async () => {
-    vi.mocked(apiClient.get).mockResolvedValue({ users: [] });
+  it("gets /users with limit/offset as query params", async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ users: [], pagination: { limit: 20, offset: 0, total: 0 } });
 
-    await userApi.list();
+    await userApi.list({ limit: 20, offset: 40 });
 
-    expect(apiClient.get).toHaveBeenCalledWith("/users");
+    expect(apiClient.get).toHaveBeenCalledWith("/users", { limit: 20, offset: 40 });
   });
 });

@@ -21,6 +21,14 @@ describe("apiClient", () => {
     expect(result).toEqual({ hello: "world" });
   });
 
+  it("get() forwards params as an axios query-string config when given", async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({ data: { success: true, data: { hello: "world" } } });
+
+    await apiClient.get("/thing", { limit: 5, offset: 10 });
+
+    expect(httpClient.get).toHaveBeenCalledWith("/thing", { params: { limit: 5, offset: 10 } });
+  });
+
   it("post() forwards the body and unwraps the envelope", async () => {
     vi.mocked(httpClient.post).mockResolvedValue({ data: { success: true, data: { id: "1" } } });
 

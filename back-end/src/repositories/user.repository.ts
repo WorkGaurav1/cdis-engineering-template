@@ -13,12 +13,18 @@ export interface CreateUserInput {
  * every caller that loads a user needs them for authorization checks.
  */
 export const userRepository = {
-  findAll() {
+  findAll({ limit, offset }: { limit: number; offset: number }) {
     return prisma.user.findMany({
       where: { deletedAt: null },
       include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } } },
       orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
     });
+  },
+
+  count() {
+    return prisma.user.count({ where: { deletedAt: null } });
   },
 
   findByEmail(email: string) {

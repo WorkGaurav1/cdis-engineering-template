@@ -10,6 +10,20 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 
+/**
+ * Drives pagination from the server instead of TanStack Table's default
+ * in-memory slicing — for a `data` array that's already just the
+ * current page, not the whole collection. `total` is the whole
+ * collection's size, used to compute the page count and to show the
+ * real "N of M" count rather than just this page's length.
+ */
+interface ServerPagination {
+  pageIndex: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (pageIndex: number) => void;
+}
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
@@ -17,6 +31,18 @@ interface DataTableProps<TData> {
   /** Shown when there is no data and loading has finished. */
   emptyMessage?: string;
   searchPlaceholder?: string;
+  /**
+   * Omit for client-side pagination (default) — `data` is the whole
+   * collection, sorted/filtered/paginated entirely in the browser.
+   * Provide when `data` is only the current server-fetched page — the
+   * search box is hidden in this mode rather than left in place: a
+   * client-side filter over one small page would silently search only
+   * that page and could show "no results" for rows that exist
+   * elsewhere in the collection, which is worse than no search at all.
+   * Sorting stays client-side (sorts only the loaded page) — a common,
+   * clearly-scoped pattern, not a misleading one.
+   */
+  serverPagination?: ServerPagination;
 }
 
 /**
@@ -32,33 +58,50 @@ export function DataTable<TData>({
   isLoading = false,
   emptyMessage = "No data available.",
   searchPlaceholder = "Search...",
+  serverPagination,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  const pageCount = serverPagination
+    ? Math.max(1, Math.ceil(serverPagination.total / serverPagination.pageSize))
+    : undefined;
+
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, globalFilter },
+    state: {
+      sorting,
+      globalFilter,
+      ...(serverPagination && {
+        pagination: { pageIndex: serverPagination.pageIndex, pageSize: serverPagination.pageSize },
+      }),
+    },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 10 } },
+    // Client-side mode still needs TanStack's own row-slicing; server
+    // mode must NOT re-slice `data` a second time — it's already just
+    // one page's worth of rows.
+    ...(serverPagination
+      ? { manualPagination: true, pageCount }
+      : { getPaginationRowModel: getPaginationRowModel(), initialState: { pagination: { pageSize: 10 } } }),
   });
 
   return (
     <div>
-      <input
-        type="search"
-        value={globalFilter}
-        onChange={(event) => { setGlobalFilter(event.target.value); }}
-        placeholder={searchPlaceholder}
-        aria-label={searchPlaceholder}
-        className="mb-3 w-full max-w-xs rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
-      />
+      {!serverPagination && (
+        <input
+          type="search"
+          value={globalFilter}
+          onChange={(event) => { setGlobalFilter(event.target.value); }}
+          placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
+          className="mb-3 w-full max-w-xs rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+        />
+      )}
 
       <div className="overflow-x-auto rounded-md border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -111,7 +154,33 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      {!isLoading && table.getPageCount() > 1 && (
+      {!isLoading && serverPagination && (
+        <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
+          <span>
+            Page {serverPagination.pageIndex + 1} of {pageCount} ({serverPagination.total} total)
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => { serverPagination.onPageChange(serverPagination.pageIndex - 1); }}
+              disabled={serverPagination.pageIndex === 0}
+              className="rounded-md border border-gray-300 px-3 py-1 disabled:cursor-default disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => { serverPagination.onPageChange(serverPagination.pageIndex + 1); }}
+              disabled={serverPagination.pageIndex + 1 >= (pageCount ?? 1)}
+              className="rounded-md border border-gray-300 px-3 py-1 disabled:cursor-default disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && !serverPagination && table.getPageCount() > 1 && (
         <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
           <span>
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}

@@ -14,3 +14,14 @@ export interface ApiErrorEnvelope {
     message: string;
   };
 }
+
+/**
+ * Shape every paginated list endpoint returns alongside its items
+ * (back-end/src/data-transfer-object/pagination.dto.ts) — offset/limit,
+ * with `total` reflecting the whole collection, not just this page.
+ */
+export interface Pagination {
+  limit: number;
+  offset: number;
+  total: number;
+}

@@ -21,7 +21,7 @@ vi.mock("@/features/dashboard/api/geoDataApi", () => ({
 }));
 
 vi.mock("@/features/users/api/userApi", () => ({
-  userApi: { list: vi.fn().mockResolvedValue({ users: [] }) },
+  userApi: { list: vi.fn().mockResolvedValue({ users: [], pagination: { limit: 20, offset: 0, total: 0 } }) },
 }));
 
 const { protectedRoutes } = await import("./protectedRoutes");

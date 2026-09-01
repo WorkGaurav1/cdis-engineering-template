@@ -224,5 +224,62 @@ describe("GET /api/v1/users permission guard", () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data.users)).toBe(true);
+    expect(res.body.data.pagination).toEqual({ limit: 20, offset: 0, total: expect.any(Number) });
+  });
+});
+
+describe("GET /api/v1/users pagination", () => {
+  let accessCookie: string | undefined;
+
+  beforeAll(async () => {
+    // A dedicated admin, plus enough freshly-created users that a
+    // limit=1 page is guaranteed to be a strict subset of what exists —
+    // real rows in the real test DB, not a mocked findMany().
+    const email = uniqueEmail("pagination-admin");
+    const registerRes = await request(app)
+      .post("/api/v1/auth/register")
+      .send({ email, name: "Pagination Admin", password: "correct-horse-battery" });
+    accessCookie = extractCookie(registerRes, "access_token");
+
+    const adminRole = await prisma.role.findFirstOrThrow({ where: { name: "admin" } });
+    const user = await prisma.user.findFirstOrThrow({ where: { email } });
+    await prisma.userRole.create({ data: { userId: user.id, roleId: adminRole.id } });
+
+    for (let i = 0; i < 3; i++) {
+      await request(app)
+        .post("/api/v1/auth/register")
+        .send({ email: uniqueEmail(`pagination-${String(i)}`), name: `Page User ${String(i)}`, password: "correct-horse-battery" });
+    }
+  });
+
+  it("bounds the page to the requested limit, real rows included", async () => {
+    const res = await request(app).get("/api/v1/users?limit=1&offset=0").set("Cookie", [accessCookie!]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.users).toHaveLength(1);
+    // The real point of this endpoint: total reflects the whole
+    // collection, not just this page — proven against a real DB where
+    // we know for a fact there are more than 1 user.
+    expect(res.body.data.pagination.total).toBeGreaterThan(1);
+  });
+
+  it("offset actually moves the window — two consecutive pages return different users", async () => {
+    const page1 = await request(app).get("/api/v1/users?limit=1&offset=0").set("Cookie", [accessCookie!]);
+    const page2 = await request(app).get("/api/v1/users?limit=1&offset=1").set("Cookie", [accessCookie!]);
+
+    expect(page1.body.data.users[0].id).not.toBe(page2.body.data.users[0].id);
+  });
+
+  it("rejects an out-of-range limit with 400", async () => {
+    const res = await request(app).get("/api/v1/users?limit=101").set("Cookie", [accessCookie!]);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("defaults to limit=20, offset=0 when no query params are given", async () => {
+    const res = await request(app).get("/api/v1/users").set("Cookie", [accessCookie!]);
+
+    expect(res.body.data.pagination.limit).toBe(20);
+    expect(res.body.data.pagination.offset).toBe(0);
   });
 });
