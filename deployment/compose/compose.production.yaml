@@ -1,9 +1,14 @@
-# Production stack — pulls pinned images from GHCR. Never builds from
-# source (that already happened, once, in each app's own CI) and never
-# depends on `latest`: FRONTEND_VERSION/BACKEND_VERSION must be set
-# explicitly to a real tag (a commit SHA, ideally) so the exact running
-# version is always known and a rollback is just "redeploy the
-# previous value of these two variables."
+# Production stack — pulls pinned images from a registry. Never builds
+# from source (that already happened, once, in CI) and never depends on
+# `latest`: FRONTEND_VERSION/BACKEND_VERSION must be set explicitly to a
+# real tag (a commit SHA, ideally) so the exact running version is
+# always known and a rollback is just "redeploy the previous value of
+# these two variables."
+#
+# FRONTEND_IMAGE/BACKEND_IMAGE name the image repositories (no tag),
+# e.g. ghcr.io/your-org/your-repo-backend — whatever your CI publishes
+# (the root .github/workflows/ci.yml prints them). Required, with no
+# default, so a clone can never silently pull someone else's images.
 #
 # Run: docker compose -f compose/compose.production.yaml up -d
 name: cdis
@@ -28,7 +33,7 @@ services:
     # this network, never from the host or the internet.
 
   backend:
-    image: ghcr.io/workgaurav1/cdis-backend:${BACKEND_VERSION:?BACKEND_VERSION is required — e.g. a commit SHA, never left as :latest}
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE is required — e.g. ghcr.io/your-org/your-repo-backend}:${BACKEND_VERSION:?BACKEND_VERSION is required — e.g. a commit SHA, never left as :latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -56,7 +61,7 @@ services:
   # scripts/deploy.sh runs it explicitly and aborts the deploy, with the
   # old version still running, if it fails.
   migrate:
-    image: ghcr.io/workgaurav1/cdis-backend:${BACKEND_VERSION:?BACKEND_VERSION is required — e.g. a commit SHA, never left as :latest}
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE is required — e.g. ghcr.io/your-org/your-repo-backend}:${BACKEND_VERSION:?BACKEND_VERSION is required — e.g. a commit SHA, never left as :latest}
     profiles: ["tools"]
     environment:
       DATABASE_URL: mysql://cdis:${DB_PASSWORD}@mysql:3306/cdis?allowPublicKeyRetrieval=true
@@ -74,7 +79,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ghcr.io/workgaurav1/cdis-frontend:${FRONTEND_VERSION:?FRONTEND_VERSION is required — e.g. a commit SHA, never left as :latest}
+    image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE is required — e.g. ghcr.io/your-org/your-repo-frontend}:${FRONTEND_VERSION:?FRONTEND_VERSION is required — e.g. a commit SHA, never left as :latest}
     restart: unless-stopped
     depends_on:
       - backend
@@ -85,7 +90,10 @@ services:
     volumes:
       - ../reverse-proxy/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
     ports:
-      - "80:80"
+      # Host port overridable for servers where something else already
+      # owns :80 (e.g. a host-level proxy). Keep 80 if you'll use
+      # setup-https.sh — Let's Encrypt's HTTP challenge needs it.
+      - "${HTTP_PORT:-80}:80"
     depends_on:
       - backend
       - frontend

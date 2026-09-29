@@ -153,16 +153,12 @@ jobs:
         working-directory: deployment
         run: npx playwright install --with-deps chromium
 
-      # CI-only values; BACKEND_BUILD_CONTEXT/FRONTEND_BUILD_CONTEXT
-      # point compose.yaml at this checkout's own back-end/front-end
-      # rather than the standalone cdis-deployment repo's default
-      # sibling-clone layout — see compose.yaml's comment.
+      # CI-only values. compose.yaml builds from this checkout's own
+      # back-end/ and front-end/ by default.
       - name: Write deployment compose .env
         working-directory: deployment/compose
         run: |
           cat > .env <<'EOF'
-          BACKEND_BUILD_CONTEXT=../../back-end
-          FRONTEND_BUILD_CONTEXT=../../front-end
           PUBLIC_ORIGIN=http://localhost:8080
           DB_PASSWORD=ci-only-db-password
           DB_ROOT_PASSWORD=ci-only-db-root-password
@@ -219,3 +215,87 @@ jobs:
       - name: Audit frontend dependencies
         working-directory: front-end
         run: npm audit --audit-level=high
+
+      - name: Audit deployment (E2E tooling) dependencies
+        working-directory: deployment
+        run: npm audit --audit-level=high
+
+  # Publishes both images only after every gate above has passed, and
+  # only for main — so a published image is always one that was tested.
+  # Image names derive from this repository, so a clone of this template
+  # publishes to its *own* ghcr.io/<owner>/<repo>-{backend,frontend}
+  # with no edits. Tagged by commit SHA (what deploy.sh pins) plus
+  # `main` as a moving convenience tag — production never deploys it.
+  publish:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image names
+        id: images
+        # GHCR requires lowercase; owner/repo names may not be.
+        run: |
+          base="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "backend=${base}-backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=${base}-frontend" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # amd64 + arm64: the target server's CPU architecture isn't fixed
+      # (e.g. cloud ARM instances), so both ship as one multi-platform image.
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v7
+        with:
+          context: back-end
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ steps.images.outputs.backend }}:${{ github.sha }}
+            ${{ steps.images.outputs.backend }}:main
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: front-end
+          push: true
+          platforms: linux/amd64,linux/arm64
+          # Real production values: the API is same-origin behind the
+          # reverse proxy, so a relative base URL works for any domain.
+          build-args: |
+            VITE_APP_NAME=CDIS
+            VITE_APP_ENV=production
+            VITE_API_BASE_URL=/api/v1
+          tags: |
+            ${{ steps.images.outputs.frontend }}:${{ github.sha }}
+            ${{ steps.images.outputs.frontend }}:main
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - name: Summary
+        run: |
+          {
+            echo "### Published images"
+            echo ""
+            echo "Set these in the server's compose/.env.production:"
+            echo '```'
+            echo "BACKEND_IMAGE=${{ steps.images.outputs.backend }}"
+            echo "FRONTEND_IMAGE=${{ steps.images.outputs.frontend }}"
+            echo '```'
+            echo "Deploy this commit: \`./scripts/deploy.sh ${{ github.sha }} ${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

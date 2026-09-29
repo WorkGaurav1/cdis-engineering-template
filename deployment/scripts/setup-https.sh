@@ -46,13 +46,21 @@ docker compose -f compose.production.yaml -f compose.https-init.yaml \
   "certbot certonly --webroot -w /var/www/certbot -d $DOMAIN --email $EMAIL --agree-tos --non-interactive"
 
 echo "==> Certificate obtained. Rendering TLS Apache config for $DOMAIN..."
+# Single quotes on purpose: envsubst takes the literal '${DOMAIN}' as the
+# list of variables it may replace (anything else in the template stays).
+# shellcheck disable=SC2016
 DOMAIN="$DOMAIN" envsubst '${DOMAIN}' \
   < "$DEPLOY_ROOT/reverse-proxy/apache/httpd.tls.conf.template" \
   > "$DEPLOY_ROOT/reverse-proxy/apache/httpd.conf"
 
+# Marks this server as HTTPS from now on: deploy.sh (and therefore CD
+# and rollback.sh) include compose.https.yaml whenever this file exists.
+# Gitignored via compose/.env*.
+echo "DOMAIN=$DOMAIN" > .env.https
+
 echo "==> Switching to steady-state HTTPS stack..."
-DOMAIN="$DOMAIN" docker compose -f compose.production.yaml -f compose.https.yaml \
-  --env-file .env.production --env-file current-versions.env up -d
+docker compose -f compose.production.yaml -f compose.https.yaml \
+  --env-file .env.production --env-file .env.https --env-file current-versions.env up -d
 
 echo "==> Verifying https://$DOMAIN/health ..."
 HEALTHY=0
@@ -83,9 +91,12 @@ Renewal (certificates expire after 90 days — run this periodically, e.g.
 monthly via cron):
   cd $DEPLOY_ROOT/compose
   docker compose -f compose.production.yaml -f compose.https.yaml \\
-    --env-file .env.production --env-file current-versions.env \\
+    --env-file .env.production --env-file .env.https --env-file current-versions.env \\
     run --rm certbot certbot renew
   docker compose -f compose.production.yaml -f compose.https.yaml \\
-    --env-file .env.production --env-file current-versions.env \\
+    --env-file .env.production --env-file .env.https --env-file current-versions.env \\
     restart reverse-proxy
+
+Deploys (./scripts/deploy.sh, CD, rollback.sh) keep HTTPS on automatically
+from now on — compose/.env.https records it.
 EOF

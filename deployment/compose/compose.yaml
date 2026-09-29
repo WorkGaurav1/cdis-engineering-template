@@ -1,11 +1,15 @@
-# Local verification stack — builds images from the sibling repo
-# checkouts (../cdis-backend, ../cdis-frontend) rather than pulling from
-# a registry. This is deliberately NOT the production model (see
-# compose.production.yaml once it exists): it exists so this repo's own
-# reverse-proxy routing and multi-container wiring can be verified
-# end-to-end without needing a registry or a real server yet.
+# Local verification stack — builds images from source rather than
+# pulling from a registry. Deliberately NOT the production model (see
+# compose.production.yaml): it exists so the reverse-proxy routing and
+# multi-container wiring can be verified end-to-end (scripts/e2e-up.sh,
+# and CI's E2E stage) without a registry or a real server.
 #
-# Run from the repo root: docker compose -f compose/compose.yaml up -d
+# Build contexts default to this monorepo's own back-end/ and front-end/.
+# In the standalone cdis-deployment export, set BACKEND_BUILD_CONTEXT /
+# FRONTEND_BUILD_CONTEXT in compose/.env to your sibling clones instead
+# (e.g. ../../cdis-backend).
+#
+# Run from deployment/: docker compose -f compose/compose.yaml up -d
 name: cdis
 
 services:
@@ -29,12 +33,7 @@ services:
 
   backend:
     build:
-      # Defaults match the standalone cdis-deployment repo's sibling
-      # layout (../../cdis-backend). The CDIS Template monorepo's
-      # deployment/compose/.env overrides this to ../../back-end,
-      # since there the sibling is this repo's own back-end/ folder,
-      # not a separate cdis-backend clone.
-      context: ${BACKEND_BUILD_CONTEXT:-../../cdis-backend}
+      context: ${BACKEND_BUILD_CONTEXT:-../../back-end}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -62,7 +61,7 @@ services:
   # it explicitly: docker compose -f compose.yaml run --rm migrate
   migrate:
     build:
-      context: ${BACKEND_BUILD_CONTEXT:-../../cdis-backend}
+      context: ${BACKEND_BUILD_CONTEXT:-../../back-end}
     profiles: ["tools"]
     environment:
       DATABASE_URL: mysql://cdis:${DB_PASSWORD}@mysql:3306/cdis?allowPublicKeyRetrieval=true
@@ -81,7 +80,7 @@ services:
 
   frontend:
     build:
-      context: ${FRONTEND_BUILD_CONTEXT:-../../cdis-frontend}
+      context: ${FRONTEND_BUILD_CONTEXT:-../../front-end}
       args:
         VITE_APP_NAME: CDIS
         VITE_APP_ENV: production

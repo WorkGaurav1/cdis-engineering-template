@@ -15,5 +15,6 @@ compose/.env*
 # config, genuinely local to whichever machine ran deploy.sh.
 compose/current-versions.env
 compose/previous-versions.env
+compose/pending-versions.env
 
 .DS_Store
