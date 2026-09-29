@@ -46,7 +46,7 @@ jobs:
       # clean: false — deployment/compose/.env.production, .env.https and
       # the *-versions.env files are gitignored server state that must
       # survive across runs on this persistent runner.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           clean: false
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}

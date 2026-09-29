@@ -20,7 +20,7 @@ How files, folders, and identifiers are actually named in this codebase, so new 
 <resource>.routes.ts
 <resource>.dto.ts
 ```
-e.g. `auth.controller.ts`, `user.service.ts`, `refreshToken.repository.ts`. Class-only files (e.g. `AppError.ts`) are PascalCase, matching the class they export. Every folder has an `index.ts` barrel.
+e.g. `auth.controller.ts`, `user.service.ts`, `refreshToken.repository.ts`. Class-only files (e.g. `AppError.ts`) are PascalCase, matching the class they export. Only `config/`, `errors/` and `routes/` have an `index.ts` barrel; everything else is imported by file path.
 
 **Frontend**
 | What | Convention | Example |

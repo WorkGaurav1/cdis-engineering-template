@@ -38,6 +38,13 @@ Tests are colocated inside the feature folder (`features/<name>/**/*.test.tsx`),
 
 If the feature also has its own backend endpoints (the demo features do — `/api/v1/demo/...`), remove the matching route/controller/service/repository files in `back-end/src/` too, and drop the corresponding Prisma models from `back-end/prisma/schema.prisma` — see [Adding a Database Change](adding-a-db-change.md) for the migration side of removing a model.
 
+**Removing all the demo content** also means:
+- `back-end/prisma/seed.ts` — delete the `seedDemo*` functions and their calls in `main()` (they write to the dropped models);
+- `back-end/src/app.test.ts` — the "mounts the demo router" test;
+- `deployment/e2e/navigation.spec.ts` — the Graphs/Charts/Table sidebar tests, and `helpers.ts`'s `loginAs`, which waits for `/dashboard` (point it at your new landing page);
+- `front-end/src/auth/components/HomeRedirect.tsx` / `RedirectIfAuthenticated.tsx` — they send signed-in users to `/dashboard`;
+- `front-end/public/data/` — the India GeoJSON used only by the dashboard maps.
+
 ---
 
 ## Related Documents

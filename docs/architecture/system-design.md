@@ -16,7 +16,7 @@ Capture the actual runtime architecture and integration points for this project.
 |---|---|---|
 | Frontend SPA | `front-end/` | `5173` |
 | Backend API | `back-end/` | `4000` |
-| Database | `deployment/compose/compose.yaml` (service `mysql`) | container `3306` |
+| Database (local dev) | `deployment/compose/compose.dev.yaml` | `3308` (databases `cdis` + `cdis_test`) |
 | Versioned API router | `back-end/src/routes/index.ts` | mounted at `/api/v1` |
 | Health router | `back-end/src/routes/health.routes.ts` | mounted at `/health` |
 
@@ -33,13 +33,13 @@ Backend Express app   (back-end/src/app.ts)
   ↓ middleware pipeline
 Prisma repository layer (back-end/src/repositories)
   ↓ MariaDB / MySQL
-Database container      (deployment/compose/compose.yaml)
+Database container      (deployment/compose/compose.dev.yaml locally)
 ```
 
 - The frontend runs as a Vite development server and communicates with the backend via REST.
 - The backend is a standalone Express app with a versioned API under `/api/v1`.
 - Health checks live outside API versioning at `/health`.
-- MySQL is intended for local development via `docker compose` and the repository uses Prisma with the MariaDB adapter.
+- MySQL runs in Docker for local development (`compose.dev.yaml`), and the backend reaches it through Prisma with the MariaDB driver adapter.
 
 **In production** (see `deployment/`), this shape changes: an Apache httpd reverse proxy sits in front of both containers as a single public origin — `/api/*` routed to the backend container, everything else to the frontend container. The frontend is built with `VITE_API_BASE_URL=/api/v1` (a relative path), so there's no cross-origin CORS in production at all, only in local dev where the Vite server and the backend run on different ports. See [Deployment Standards](../standards/deployment.md).
 
@@ -50,7 +50,8 @@ Database container      (deployment/compose/compose.yaml)
 1. Browser request starts in the frontend.
 2. Requests use `axios` with `withCredentials: true`.
 3. If the request is authenticated, cookies are sent automatically by the browser.
-4. The backend applies middleware in this order:
+4. The backend applies middleware in this order (`back-end/src/app.ts`):
+   - `trust proxy` set to `TRUST_PROXY_HOPS` (0 locally, 1 behind the Apache proxy) — decides `req.ip`, which the rate limiters key on
    - `helmet()`
    - `cors()` with credentials enabled
    - `compression()`
@@ -72,8 +73,8 @@ Database container      (deployment/compose/compose.yaml)
 - `access_token` is a JWT valid for a short period.
 - `refresh_token` is an opaque random value stored hashed in the database.
 - `csrf_token` is readable by frontend JS and used for double-submit CSRF protection.
-- `requireAuth` validates the JWT and attaches `req.userId`.
-- `requirePermission` loads the current user and checks permission keys.
+- `requireAuth` validates the JWT, reloads the user with roles/permissions from the database, and attaches `req.userId` + `req.user`.
+- `requirePermission` checks permission keys on `req.user`.
 
 ---
 

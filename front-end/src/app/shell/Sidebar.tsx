@@ -25,6 +25,7 @@ import { Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { PermissionGate } from "@/auth";
+import { appConfig } from "@/config/appConfig";
 
 import { navigationConfig, type NavigationItem } from "../../config/navigation/navigationConfig.ts";
 
@@ -84,11 +85,11 @@ function SidebarBrand({ collapsed }: { collapsed?: boolean }) {
     return (
         <div className="flex items-center gap-2.5 px-1 py-2">
             <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm">
-                <img src="/cdis_logo.png" alt="CDIS" className="h-full w-full object-contain" />
+                <img src="/cdis_logo.png" alt={appConfig.app.name} className="h-full w-full object-contain" />
             </span>
             {!collapsed && (
                 <div className="leading-tight">
-                    <div className="text-sm font-bold tracking-wide text-slate-900 dark:text-white">CDIS</div>
+                    <div className="text-sm font-bold tracking-wide text-slate-900 dark:text-white">{appConfig.app.name}</div>
                     <div className="text-[10px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">
                         DASHBOARD
                     </div>

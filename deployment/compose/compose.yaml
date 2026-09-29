@@ -66,11 +66,13 @@ services:
     environment:
       DATABASE_URL: mysql://cdis:${DB_PASSWORD}@mysql:3306/cdis?allowPublicKeyRetrieval=true
       BCRYPT_SALT_ROUNDS: 12
-      # Optional initial admin (see env/production.env.example). Both
-      # unset = no admin is created. Only this one-off job ever sees
-      # these — the long-running backend service never does.
-      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      # Initial admin. This local stack defaults to the E2E suite's admin
+      # (e2e/helpers.ts) so the suite works from a fresh clone; the
+      # password is public, which is why the proxy below only listens
+      # on 127.0.0.1. Only this one-off job ever sees these — the
+      # long-running backend service never does.
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-e2e-admin@example.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-e2e-admin-password}
       SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-}
     command: ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
     restart: "no"
@@ -98,7 +100,8 @@ services:
     volumes:
       - ../reverse-proxy/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
     ports:
-      - "8080:80"
+      # Loopback only: this stack has a well-known seeded admin.
+      - "127.0.0.1:8080:80"
     depends_on:
       - backend
       - frontend

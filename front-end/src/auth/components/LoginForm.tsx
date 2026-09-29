@@ -3,6 +3,8 @@ import { useState, type SubmitEvent } from "react";
 import { ShieldCheck } from "lucide-react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 
+import { appConfig } from "@/config/appConfig";
+
 import type { LoginFormValues } from "../schemas/loginSchema";
 
 interface LoginFormProps {
@@ -37,7 +39,7 @@ export function LoginForm({
           Secure sign-in
         </span>
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Welcome back</h1>
-        <p className="mt-1.5 text-sm text-gray-500">Sign in to your CDIS account to continue.</p>
+        <p className="mt-1.5 text-sm text-gray-500">Sign in to your {appConfig.app.name} account to continue.</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">

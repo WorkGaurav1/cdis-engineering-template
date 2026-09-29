@@ -48,16 +48,21 @@ Defaults in both files match the local MySQL container's credentials below — n
 ## 5. Start the database
 
 ```bash
-docker compose -f deployment/compose/compose.yaml up -d mysql
+docker compose -f deployment/compose/compose.dev.yaml up -d --wait
 ```
 
-Then apply migrations and seed reference data (roles/permissions + demo datasets — no login user is seeded, see step 8):
+This is MySQL only, on `localhost:3308`, with fixed dev credentials (the ones already in `back-end/.env.example`). On first start it creates two databases: `cdis` for development and `cdis_test` for the integration tests.
+
+Then create the tables and seed reference data (roles/permissions + demo datasets):
 
 ```bash
 cd back-end
-npm run prisma:migrate
+npx prisma migrate deploy   # applies every committed migration
 npm run prisma:seed
+npm run db:test:prepare     # same, for the cdis_test database
 ```
+
+(`npm run prisma:migrate` is for *changing* the schema — it generates a new migration. See [Adding a Database Change](development/adding-a-db-change.md).)
 
 ---
 
@@ -80,17 +85,24 @@ cd front-end && npm run dev
 
 ---
 
-## 8. Log in
+## 8. Sign in and become an admin
 
-No demo user is seeded — register your own account once:
+Open `http://localhost:5173`, choose **Create one**, and register. New accounts get the plain `user` role.
+
+To make yourself an admin (needed for the Users page and the role editor), point the seed's initial-admin settings at your account in `back-end/.env` and re-run the seed:
 
 ```bash
-curl -X POST http://localhost:4000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"correct-horse-battery-staple","name":"Your Name"}'
+# back-end/.env
+SEED_ADMIN_EMAIL=you@example.com
+SEED_ADMIN_PASSWORD=any-8-plus-characters   # required, but never applied to an existing account
 ```
 
-Then log in at `http://localhost:5173` with that email/password.
+```bash
+cd back-end && npm run prisma:seed
+# Seed: initial admin you@example.com already existed; admin role granted (password left unchanged).
+```
+
+Reload the app — the account menu now has **Users**, where admins can change anyone else's roles. The same variables create the first admin on a real server; see [`deployment/README.md`](../deployment/README.md).
 
 ---
 
@@ -99,7 +111,7 @@ Then log in at `http://localhost:5173` with that email/password.
 ```bash
 cd front-end && npm test
 cd back-end && npm test          # unit only
-cd back-end && npm run test:all  # unit + integration (needs a `cdis_test` database — see back-end/README.md)
+cd back-end && npm run test:all  # unit + integration against the real cdis_test database (step 5)
 ```
 
 Cross-application E2E (drives a real browser against the whole stack):
@@ -120,6 +132,7 @@ Each of these is a short, real, command-first doc — not a generic tutorial:
 - [Removing a feature](development/removing-a-feature.md) — most commonly, deleting the demo content
 - [Adding an API endpoint](development/adding-api.md) — route → DTO → middleware → controller → service → repository
 - [Adding a database change](development/adding-a-db-change.md) — schema → migration → seed
+- [Starting a new project](development/starting-a-new-project.md) — renaming, branding, GitHub and server setup for your own clone
 
 ---
 
@@ -130,7 +143,7 @@ cd front-end && npm run lint && npx tsc -b && npm test
 cd back-end && npm run lint && npm run build && npm run test:all
 ```
 
-These are exactly the checks CI runs — green locally means green in CI.
+These are the per-app checks CI runs. CI additionally runs the Playwright E2E suite against the full containerized stack (step 9), coverage thresholds, and `npm audit` — see [Testing Standards](standards/testing.md).
 
 ---
 

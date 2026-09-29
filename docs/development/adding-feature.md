@@ -29,7 +29,7 @@ features/<name>/
 └── index.ts             # re-exports the page + the module
 ```
 
-`protectedRoutes.tsx` and `navigationConfig.ts` each keep their own `featureModules` array — every feature needs a route (`protectedRoutes.tsx`), but not every feature gets a sidebar entry (`users`/`settings` are deliberately routed-but-not-in-nav). List a new feature in `protectedRoutes.tsx` always, and in `navigationConfig.ts` only if it should appear in the sidebar. See [Removing a Feature](removing-a-feature.md) for the reverse of this.
+`protectedRoutes.tsx` and `navigationConfig.ts` each keep their own `featureModules` array — every feature needs a route (`protectedRoutes.tsx`), but not every feature gets a sidebar entry (`users`/`settings` are deliberately routed-but-not-in-nav; both are reached from the account menu in `app/shell/ProfileMenu.tsx`, Users only for `users:read` holders). List a new feature in `protectedRoutes.tsx` always, and in `navigationConfig.ts` only if it should appear in the sidebar. See [Removing a Feature](removing-a-feature.md) for the reverse of this.
 
 ---
 

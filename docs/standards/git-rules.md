@@ -534,6 +534,8 @@ Before every release
 
 # Git Hooks
 
+> **In this repo today:** no git hooks are installed and there is no Prettier config (see [Code Style](code-style.md)). The same checks run in CI on every push and PR instead. The list below is the recommended setup if your project adds hooks.
+
 Recommended hooks
 
 Pre-commit

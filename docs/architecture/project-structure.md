@@ -19,10 +19,12 @@ front-end/
 back-end/
 deployment/
 docs/
+scripts/        # export-to-repos.sh (CDIS's sibling-repo split)
+.github/        # ci.yml (checks + image publishing), deploy.yml (CD), dependabot
 README.md
 ```
 
-`deployment/` owns Docker Compose (local, production, HTTPS overlays), the Apache reverse proxy config, deploy/rollback/health-check scripts, and the cross-application Playwright E2E suite — see [Deployment Standards](../standards/deployment.md) and [Docker Standards](../standards/docker.md).
+`deployment/` owns Docker Compose (dev database, local stack, production, HTTPS overlays), the Apache reverse proxy config, deploy/rollback/health-check/migration-recovery scripts, and the cross-application Playwright E2E suite — see [Deployment Standards](../standards/deployment.md) and [Docker Standards](../standards/docker.md).
 
 ---
 
@@ -35,9 +37,9 @@ README.md
 | `api/` | HTTP client, typed API layer, interceptors for auth/session behavior |
 | `app/` | App providers, shell, layout composition |
 | `assets/` | static assets (fonts, icons, images, SVG) |
-| `auth/` | authentication module: pages, forms, route guards, hooks, API calls |
+| `auth/` | authentication module: login/register pages, forms, route guards, permission hooks, API calls |
 | `config/` | runtime app config and environment mapping |
-| `features/` | feature modules for dashboard, charts, graphs, tables, users |
+| `features/` | feature modules: `users` and `settings` (foundational), `dashboard`, `graphs`, `charts`, `tables` (demo content) |
 | `layouts/` | public and protected route layouts |
 | `routes/` | route definitions and route composition |
 | `shared/` | reusable components, hooks, utils, validations, types |
@@ -69,9 +71,12 @@ features/<feature>/
 | `middlewares/` | auth, permission, CSRF, validation, rate limiting, 404/error handlers |
 | `repositories/` | Prisma queries and persistence logic |
 | `routes/` | route registration and route files |
+| `seed/` | seed logic that needs testing (the initial admin); `prisma/seed.ts` runs it |
 | `services/` | business logic, token/session rules, auth workflows |
-| `test-utils/` | shared backend test helpers |
-| `prisma/` | schema, migrations, seed data |
+| `test-utils/` | shared backend test helpers, the integration-test database URL |
+| `types/` | ambient type declarations (`req.user`, `req.validatedQuery`) |
+| `utils/` | response envelope helpers |
+| `prisma/` (outside `src/`) | schema, migrations, `seed.ts`, `prepare-test-database.ts` |
 
 ---
 
@@ -79,7 +84,7 @@ features/<feature>/
 
 | Task | Location |
 |---|---|
-| Add a frontend feature | `front-end/src/features/<name>/`, register in `front-end/src/routes/protectedRoutes.tsx` and `front-end/src/config/navigation/navigationConfig.ts` |
+| Add a frontend feature | `front-end/src/features/<name>/`, register in `front-end/src/routes/protectedRoutes.tsx` (and `front-end/src/config/navigation/navigationConfig.ts` for a sidebar entry) |
 | Add a shared component | `front-end/src/shared/components/` |
 | Add a backend resource | new `controller`, `service`, `repository`, `route`, `dto` files in `back-end/src/` |
 | Add a database model | `back-end/prisma/schema.prisma`, then `cd back-end && npm run prisma:migrate` |

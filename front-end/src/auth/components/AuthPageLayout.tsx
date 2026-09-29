@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 import { LayoutDashboard, RefreshCw, ShieldCheck } from "lucide-react";
 
+import { appConfig } from "@/config/appConfig";
+
 const FEATURES: Array<{ icon: typeof ShieldCheck; iconClassName: string; text: string }> = [
   {
     icon: ShieldCheck,
@@ -45,7 +47,7 @@ export function AuthPageLayout({ children }: { children: ReactNode }) {
           <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-lg">
             <img src="/cdis_logo.png" alt="" className="h-full w-full object-contain" />
           </span>
-          <span className="text-sm font-semibold tracking-wide">CDIS Engineering Template</span>
+          <span className="text-sm font-semibold tracking-wide">{appConfig.app.name}</span>
         </div>
 
         <div className="relative max-w-md">
@@ -65,7 +67,7 @@ export function AuthPageLayout({ children }: { children: ReactNode }) {
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/50">&copy; {new Date().getFullYear()} CDIS Engineering Platform</p>
+        <p className="relative text-xs text-white/50">&copy; {new Date().getFullYear()} {appConfig.app.name}</p>
       </div>
 
       {/* Form panel */}
@@ -74,7 +76,7 @@ export function AuthPageLayout({ children }: { children: ReactNode }) {
           <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
             <img src="/cdis_logo.png" alt="" className="h-full w-full object-contain" />
           </span>
-          <span className="text-sm font-semibold text-gray-900">CDIS</span>
+          <span className="text-sm font-semibold text-gray-900">{appConfig.app.name}</span>
         </div>
 
         {children}

@@ -13,7 +13,7 @@ Read [`docs/START-HERE.md`](docs/START-HERE.md) — it covers bootstrap, running
    cd front-end && npm run lint && npx tsc -b && npm test
    cd back-end && npm run lint && npm run build && npm run test:all
    ```
-4. Open a PR against `main`. CI runs lint → type-check → tests → coverage → E2E → security checks, in that order — a failure at any stage blocks the merge.
+4. Open a PR against `main`. CI runs lint → type-check → tests → build → E2E → coverage → security checks, in that order — a failure at any stage blocks the merge (once branch protection requires the `ci` check).
 5. Keep commits scoped to one logical change; write commit messages that explain *why*, not just what changed.
 
 ## Where things live

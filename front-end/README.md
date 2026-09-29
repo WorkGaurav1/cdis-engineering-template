@@ -25,7 +25,7 @@ This repository was split out of the original `cdis-engineering-template` monore
 src/
 ├── api/                client (axios instance, interceptors, error normalization)
 ├── app/                app shell (Sidebar, Navbar, theme), providers, App.tsx entry
-├── auth/                auth context/provider, login form, route guards, hooks
+├── auth/                auth context/provider, login + register pages, route guards, permission hooks
 ├── config/              env validation, navigation config
 ├── features/             one folder per feature module (dashboard, users, charts, graphs, tables, settings)
 ├── layouts/              ProtectedLayout / PublicLayout
@@ -40,7 +40,7 @@ src/
 
 ## Prerequisites
 
-- Node.js 20+ (22+ recommended)
+- Node.js 22+ (`engines` in `package.json`)
 - A reachable backend API (see [`cdis-backend`](https://github.com/WorkGaurav1/cdis-backend))
 
 ---
@@ -58,7 +58,7 @@ All frontend env vars are prefixed `VITE_` and get baked into the build at build
 
 | Variable | Notes |
 |---|---|
-| `VITE_APP_NAME` | display name |
+| `VITE_APP_NAME` | display name — sidebar, sign-in screens, browser tab |
 | `VITE_APP_ENV` | `development` \| `testing` \| `staging` \| `production` |
 | `VITE_API_BASE_URL` | the backend's `/api/v1` base URL — must match wherever `cdis-backend` is actually running |
 
@@ -108,6 +108,8 @@ npm run lint
 
 - **Auth state** lives in `AuthContext`/`AuthProvider` (React Query under the hood for the session-restore call), not Redux/Zustand — there's exactly one piece of global client state that matters (who's logged in), and Context is enough for that.
 - **API errors** are normalized to a single `ApiError` shape by `api/client/interceptors.ts` before UI code ever sees them — components never handle raw Axios errors.
+- **Registration** (`/register`) is only linked from the sign-in page when the backend reports `selfRegistration: true` (`GET /auth/options`).
+- **Users** (account menu, `users:read`) lists accounts; holders of `roles:manage` can change anyone else's roles there.
 - **A 401 gets one silent retry** via a refresh-token call before the UI treats the session as expired (see `interceptors.ts`) — concurrent 401s share a single in-flight refresh to avoid tripping the backend's refresh-token reuse detection.
 
 ---

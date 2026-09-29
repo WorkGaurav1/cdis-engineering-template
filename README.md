@@ -13,11 +13,12 @@ This repository is the complete, canonical CDIS template: frontend, backend, dep
 - React + TypeScript + Vite, Node.js + Express + TypeScript
 - MySQL via Prisma, with real migrations and idempotent seeding
 - Cookie-based auth: JWT access tokens, rotating refresh tokens with reuse detection, CSRF (double-submit), RBAC permissions
+- Sign-in and self-registration pages (sign-up can be switched off), an admin role editor, and an initial admin seeded from env vars
 - React Hook Form + Zod on the frontend, Zod DTOs on the backend
-- Docker (multi-stage, non-root, multi-platform) for both apps, published to GHCR
-- Apache httpd reverse proxy, Docker Compose (local + production + HTTPS), deploy/rollback/health-check scripts
-- Unit, integration, and end-to-end testing with enforced coverage floors
-- Real CI (lint → type-check → tests → coverage → security → build) on every push
+- Docker (multi-stage, non-root, multi-platform) for both apps, published to GHCR by this repo's own CI
+- Apache httpd reverse proxy, Docker Compose (dev database, local stack, production, HTTPS), deploy/rollback/health-check scripts with migrations applied on every deploy
+- Unit, integration (real MySQL), and end-to-end (Playwright) testing with enforced coverage floors
+- Real CI on every push and PR (lint → type-check → tests → build → E2E → coverage → security), then image publishing and optional continuous deployment
 
 ---
 
@@ -69,27 +70,38 @@ cd ../back-end
 npm install
 ```
 
-## 3. Start Database
+## 3. Configure Environment
 
 ```bash
-docker compose -f deployment/compose/compose.yaml up -d mysql
+cp back-end/.env.example back-end/.env
+cp front-end/.env.example front-end/.env
 ```
 
-## 4. Start Backend
+The defaults match the dev database below — no edits needed for local development.
+
+## 4. Start the Database and Prepare It
 
 ```bash
+docker compose -f deployment/compose/compose.dev.yaml up -d --wait
+
 cd back-end
-npm run dev
+npx prisma migrate deploy   # create the tables
+npm run prisma:seed         # roles/permissions + demo data
+npm run db:test:prepare     # the separate database integration tests use
 ```
 
-## 5. Start Frontend
+`compose.dev.yaml` is MySQL only, on `localhost:3308`, with fixed dev credentials. It creates both the `cdis` (dev) and `cdis_test` (integration tests) databases.
+
+## 5. Start Backend and Frontend
 
 ```bash
-cd front-end
-npm run dev
+cd back-end && npm run dev     # http://localhost:4000
+cd front-end && npm run dev    # http://localhost:5173
 ```
 
-Alternatively, bring up the entire stack (MySQL + backend + frontend + Apache reverse proxy) in containers at once — see [Docker Standards](docs/standards/docker.md).
+Open `http://localhost:5173` and create an account with **Create one** on the sign-in page. To make yourself an admin, see [`docs/START-HERE.md`](docs/START-HERE.md#8-sign-in-and-become-an-admin).
+
+Alternatively, bring up the entire stack (MySQL + backend + frontend + Apache reverse proxy) in containers at once with `deployment/scripts/e2e-up.sh` — see [`deployment/README.md`](deployment/README.md).
 
 ---
 
@@ -124,7 +136,8 @@ npm test
 
 ```bash
 cd back-end
-npm test
+npm test                  # unit
+npm run test:integration  # real MySQL — needs the dev database (step 4)
 ```
 
 ### End-to-End
@@ -161,8 +174,8 @@ See [`docs/development/adding-api.md`](docs/development/adding-api.md) for the r
 | `deployment/README.md` | Docker Compose, reverse proxy, deploy/rollback, HTTPS |
 | `docs/architecture/` | System architecture, request flow, auth/authz |
 | `docs/standards/` | Engineering standards (code style, Docker, deployment, security, testing, etc.) |
-| `docs/development/` | Development workflows (adding a feature, an endpoint, a module) |
-| `docs/adr/` | Architectural decision records |
+| `docs/development/` | Development workflows (starting a new project, adding a feature, an endpoint, a module) |
+| `docs/architecture-decision-record/` | Architectural decision records |
 
 ---
 

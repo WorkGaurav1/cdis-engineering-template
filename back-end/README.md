@@ -31,6 +31,7 @@ src/
 ├── middlewares/               requireAuth, requirePermission, csrf, validate, rate limiters
 ├── repositories/              all direct Prisma access, one per model
 ├── routes/                    Express routers
+├── seed/                      initial-admin seeding (run by prisma/seed.ts)
 ├── services/                  business logic
 ├── test-utils/                shared test mocks (Express req/res)
 ├── types/                     ambient type declarations
@@ -41,7 +42,8 @@ src/
 prisma/
 ├── schema.prisma
 ├── migrations/
-└── seed.ts                    roles/permissions + demo data (idempotent)
+├── seed.ts                    roles/permissions, optional initial admin, demo data (idempotent)
+└── prepare-test-database.ts   `npm run db:test:prepare`
 ```
 
 **`routes/demo.routes.ts` and the `Demo*` Prisma models (`DemoStateMetric`, `DemoChartDataset`, `DemoChartPoint`, `DemoTableDataset`, `DemoTableRow`) are demonstration content** — they exist to give the frontend's dashboard/charts/graphs/tables features real, working data to show off the patterns. Delete or replace them for a new project; see the CDIS Template repo's `docs/development/removing-a-feature.md`. Everything else here (auth, users, the layering itself) is foundational.
@@ -50,7 +52,7 @@ prisma/
 
 ## Prerequisites
 
-- Node.js 20+ (22+ recommended — some dependencies request it)
+- Node.js 22+ (`engines` in `package.json`)
 - A running MySQL 8.0 instance (see [Database](#database) below)
 
 ---
@@ -67,24 +69,33 @@ npx prisma generate
 
 | Variable | Notes |
 |---|---|
-| `NODE_ENV` | `development` \| `test` \| `production` |
-| `PORT` | defaults to `4000` |
+| `NODE_ENV` | `development` \| `test` \| `staging` \| `production` |
+| `PORT` | required — `4000` in `.env.example` |
 | `CORS_ORIGIN` | must exactly match the frontend's origin |
-| `DATABASE_URL` | `mysql://user:pass@host:port/db` |
+| `DATABASE_URL` | `mysql://user:pass@host:port/db` — keep `?allowPublicKeyRetrieval=true` for MySQL 8 over plain TCP |
+| `TRUST_PROXY_HOPS` | `0` when clients connect directly, `1` behind one reverse proxy |
+| `ALLOW_SELF_REGISTRATION` | `true` \| `false` — whether `POST /auth/register` is open |
 | `JWT_ACCESS_SECRET` | long random value — never reuse the `.env.example` placeholder |
 | `JWT_ACCESS_EXPIRES_IN`, `REFRESH_TOKEN_EXPIRES_IN_DAYS` | token lifetimes |
 | `BCRYPT_SALT_ROUNDS` | password hashing cost |
 | `ACCOUNT_LOCKOUT_MAX_ATTEMPTS`, `ACCOUNT_LOCKOUT_DURATION_MINUTES` | login lockout policy |
 
+Every variable above is required; the server refuses to start if one is missing or malformed (`src/config/env.ts`).
+
+**Seed-only** (read by `prisma/seed.ts`, never the server): `SEED_ADMIN_EMAIL` + `SEED_ADMIN_PASSWORD` (both or neither) create an initial admin, or grant `admin` to an existing account with that email — an existing password is never changed. `SEED_ADMIN_NAME` is optional.
+
 ---
 
 ## Database
 
-This repo doesn't bundle a database — point `DATABASE_URL` at any reachable MySQL 8.0 instance. For local development, the sibling `cdis-deployment` repo's compose file is one option; any local MySQL install works too.
+This folder doesn't bundle a database — point `DATABASE_URL` at any reachable MySQL 8.0 instance. For local development, `deployment/compose/compose.dev.yaml` (in the CDIS Template repo, or the `cdis-deployment` export) starts one on `localhost:3308` matching `.env.example`, with both the `cdis` and `cdis_test` databases:
 
 ```bash
+docker compose -f ../deployment/compose/compose.dev.yaml up -d --wait
+
 npx prisma migrate deploy   # apply migrations
-npx prisma db seed          # roles/permissions + demo data (idempotent, safe to re-run)
+npm run prisma:seed         # roles/permissions, optional admin, demo data (idempotent, safe to re-run)
+npm run db:test:prepare     # the same for the integration-test database, cdis_test
 ```
 
 ---
@@ -104,7 +115,7 @@ Two independent suites — see `docs` in the original template repo for the full
 
 ```bash
 npm test                  # unit tests — mocked, no real DB (fast)
-npm run test:integration  # real MySQL, dedicated *_test database
+npm run test:integration  # real MySQL, the cdis_test database (run db:test:prepare first)
 npm run test:all          # both
 npm run test:coverage     # unit tests with coverage enforcement
 ```
