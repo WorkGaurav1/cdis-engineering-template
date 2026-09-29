@@ -15,4 +15,5 @@ export const SESSION_EXPIRED_EVENT = "auth:session-expired";
 
 export const AUTH_QUERY_KEYS = {
   currentUser: ["auth", "me"] as const,
+  options: ["auth", "options"] as const,
 };

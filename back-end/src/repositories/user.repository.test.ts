@@ -11,7 +11,10 @@ vi.mock("../lib/prisma.js", () => ({
     },
     userRole: {
       create: vi.fn(),
+      deleteMany: vi.fn().mockReturnValue("delete-op"),
+      createMany: vi.fn().mockReturnValue("create-op"),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -142,5 +145,21 @@ describe("userRepository.resetFailedLogins", () => {
       where: { id: "u1" },
       data: { failedLoginAttempts: 0, lockedUntil: null },
     });
+  });
+});
+
+describe("userRepository.replaceRoles", () => {
+  it("deletes the old roles and creates the new ones in one transaction", async () => {
+    await userRepository.replaceRoles("u1", ["r1", "r2"]);
+
+    expect(prisma.userRole.deleteMany).toHaveBeenCalledWith({ where: { userId: "u1" } });
+    expect(prisma.userRole.createMany).toHaveBeenCalledWith({
+      data: [
+        { userId: "u1", roleId: "r1" },
+        { userId: "u1", roleId: "r2" },
+      ],
+    });
+    // Both operations handed to a single $transaction, delete first.
+    expect(prisma.$transaction).toHaveBeenCalledWith(["delete-op", "create-op"]);
   });
 });

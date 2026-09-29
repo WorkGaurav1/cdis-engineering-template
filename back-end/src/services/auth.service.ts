@@ -42,6 +42,12 @@ export const authService = {
     input: { email: string; name: string; password: string },
     context: RequestContext,
   ): Promise<AuthResult> {
+    // Checked before anything else (even the duplicate-email lookup), so
+    // a closed deployment can't be probed for which emails exist.
+    if (!env.auth.allowSelfRegistration) {
+      throw new ForbiddenError("Self-registration is turned off. Ask an administrator for an account.");
+    }
+
     const existing = await userRepository.findByEmail(input.email);
 
     if (existing) {
@@ -164,6 +170,11 @@ export const authService = {
     if (existing && !existing.revokedAt) {
       await refreshTokenRepository.revoke(existing.id);
     }
+  },
+
+  /** Public, unauthenticated: what the login screen needs to know before anyone signs in. */
+  getOptions(): { selfRegistration: boolean } {
+    return { selfRegistration: env.auth.allowSelfRegistration };
   },
 
   async getCurrentUser(userId: string): Promise<SafeUser> {

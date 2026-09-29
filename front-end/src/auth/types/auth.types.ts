@@ -6,6 +6,21 @@ export interface LoginRequest {
   password: string;
 }
 
+/**
+ * Self-registration payload — always creates a plain "user" account;
+ * roles are granted afterwards by someone with roles:manage.
+ */
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+/** Public (pre-login) auth settings from GET /auth/options. */
+export interface AuthOptions {
+  selfRegistration: boolean;
+}
+
 export interface User {
   id: string;
   name: string;

@@ -49,6 +49,8 @@ services:
       ACCOUNT_LOCKOUT_DURATION_MINUTES: 15
       # Exactly one hop: the Apache reverse-proxy container below.
       TRUST_PROXY_HOPS: 1
+      # On: the E2E suite registers its own throwaway users.
+      ALLOW_SELF_REGISTRATION: "true"
     depends_on:
       mysql:
         condition: service_healthy

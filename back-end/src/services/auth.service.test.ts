@@ -69,6 +69,23 @@ beforeEach(() => {
 });
 
 describe("authService.register", () => {
+  it("is refused before any lookup when self-registration is turned off", async () => {
+    vi.stubEnv("ALLOW_SELF_REGISTRATION", "false");
+    vi.resetModules();
+    const fresh = await import("./auth.service.js");
+    const freshUsers = (await import("../repositories/user.repository.js")).userRepository;
+    const { ForbiddenError: FreshForbidden } = await import("../errors/index.js");
+
+    await expect(
+      fresh.authService.register({ email: "new@example.com", name: "New", password: "password123" }, context),
+    ).rejects.toThrow(FreshForbidden);
+    // Not even the duplicate-email check runs, so a closed deployment
+    // can't be used to probe which emails have accounts.
+    expect(freshUsers.findByEmail).not.toHaveBeenCalled();
+
+    vi.unstubAllEnvs();
+  });
+
   it("rejects a duplicate email with ConflictError", async () => {
     vi.mocked(userRepository.findByEmail).mockResolvedValue(fakeUserWithRoles());
 
@@ -246,6 +263,12 @@ describe("authService.logout", () => {
 
     await expect(authService.logout("nonexistent-token")).resolves.not.toThrow();
     expect(refreshTokenRepository.revoke).not.toHaveBeenCalled();
+  });
+});
+
+describe("authService.getOptions", () => {
+  it("reports whether self-registration is on", () => {
+    expect(authService.getOptions()).toEqual({ selfRegistration: true });
   });
 });
 

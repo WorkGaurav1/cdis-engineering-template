@@ -1,11 +1,30 @@
 import { test, expect } from "@playwright/test";
 
-import { loginAs, registerTestUser, type TestUser } from "./helpers";
+import { loginAs, registerTestUser, uniqueEmail, type TestUser } from "./helpers";
 
 let user: TestUser;
 
 test.beforeAll(async () => {
   user = await registerTestUser("auth");
+});
+
+test.describe("Registration", () => {
+  test("creates an account through the Register page, linked from login, and lands signed in", async ({ page }) => {
+    const email = uniqueEmail("register-ui");
+
+    await page.goto("/login");
+    await page.getByRole("link", { name: "Create one" }).click();
+    await expect(page).toHaveURL(/\/register$/);
+
+    await page.getByLabel("Full name").fill("E2E Registered");
+    await page.getByLabel("Email address").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple");
+    await page.getByLabel("Confirm password").fill("correct-horse-battery-staple");
+    await page.getByRole("button", { name: "Create Account" }).click();
+
+    await page.waitForURL("**/dashboard");
+    await expect(page.getByText("E2E Registered")).toBeVisible();
+  });
 });
 
 test.describe("Login", () => {

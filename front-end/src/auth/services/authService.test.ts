@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../api", () => ({
-  authApi: { login: vi.fn(), getCurrentUser: vi.fn(), logout: vi.fn() },
+  authApi: { login: vi.fn(), register: vi.fn(), getCurrentUser: vi.fn(), logout: vi.fn() },
 }));
 
 const { authApi } = await import("../api");
@@ -18,6 +18,12 @@ describe("authService", () => {
     vi.mocked(authApi.login).mockResolvedValue({ user });
 
     await expect(authService.login({ email: "t@example.com", password: "pw" })).resolves.toEqual(user);
+  });
+
+  it("register unwraps the new user from the auth response envelope", async () => {
+    vi.mocked(authApi.register).mockResolvedValue({ user });
+
+    await expect(authService.register({ name: "Test", email: "t@example.com", password: "password123" })).resolves.toEqual(user);
   });
 
   it("getCurrentUser unwraps the user from the auth response envelope", async () => {

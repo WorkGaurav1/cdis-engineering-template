@@ -21,6 +21,7 @@ export default defineConfig({
       ACCOUNT_LOCKOUT_MAX_ATTEMPTS: "5",
       ACCOUNT_LOCKOUT_DURATION_MINUTES: "15",
       TRUST_PROXY_HOPS: "0",
+      ALLOW_SELF_REGISTRATION: "true",
     },
     // Integration tests share one DB connection pool and can't safely
     // run in parallel worker processes against the same rows.

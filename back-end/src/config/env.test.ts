@@ -96,6 +96,23 @@ describe("env — non-negative integer validation (TRUST_PROXY_HOPS)", () => {
   });
 });
 
+describe("env — boolean validation (ALLOW_SELF_REGISTRATION)", () => {
+  it("parses exactly \"true\" and \"false\"", async () => {
+    vi.stubEnv("ALLOW_SELF_REGISTRATION", "false");
+    expect((await importFresh()).env.auth.allowSelfRegistration).toBe(false);
+
+    vi.stubEnv("ALLOW_SELF_REGISTRATION", "true");
+    expect((await importFresh()).env.auth.allowSelfRegistration).toBe(true);
+  });
+
+  it("rejects anything else rather than guessing (a typo must not silently mean false)", async () => {
+    for (const value of ["1", "yes", "TRUE", "on"]) {
+      vi.stubEnv("ALLOW_SELF_REGISTRATION", value);
+      await expect(importFresh()).rejects.toThrow(/Invalid ALLOW_SELF_REGISTRATION/);
+    }
+  });
+});
+
 describe("env — NODE_ENV validation", () => {
   it("throws when NODE_ENV is not one of the recognized environments", async () => {
     vi.stubEnv("NODE_ENV", "staging-typo");

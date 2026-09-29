@@ -4,6 +4,7 @@ vi.mock("../lib/prisma.js", () => ({
   prisma: {
     role: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -29,5 +30,31 @@ describe("roleRepository.findByName", () => {
     vi.mocked(prisma.role.findFirst).mockResolvedValue(null);
 
     await expect(roleRepository.findByName("nonexistent")).resolves.toBeNull();
+  });
+});
+
+describe("roleRepository.findByNames", () => {
+  it("looks up every given name at once, excluding soft-deleted roles", async () => {
+    vi.mocked(prisma.role.findMany).mockResolvedValue([]);
+
+    await roleRepository.findByNames(["admin", "manager"]);
+
+    expect(prisma.role.findMany).toHaveBeenCalledWith({
+      where: { name: { in: ["admin", "manager"] }, deletedAt: null },
+    });
+  });
+});
+
+describe("roleRepository.findAll", () => {
+  it("returns live roles with their permissions, alphabetically", async () => {
+    vi.mocked(prisma.role.findMany).mockResolvedValue([]);
+
+    await roleRepository.findAll();
+
+    expect(prisma.role.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null },
+      include: { permissions: { include: { permission: true } } },
+      orderBy: { name: "asc" },
+    });
   });
 });

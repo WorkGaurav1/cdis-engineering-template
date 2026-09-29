@@ -47,6 +47,7 @@
 
 export const ROUTE_SEGMENTS = {
     LOGIN: "login",
+    REGISTER: "register",
     FORBIDDEN: "forbidden",
 
     DASHBOARD: "dashboard",
@@ -70,6 +71,7 @@ export const ROUTES = {
     HOME: "/",
 
     LOGIN: `/${ROUTE_SEGMENTS.LOGIN}`,
+    REGISTER: `/${ROUTE_SEGMENTS.REGISTER}`,
     FORBIDDEN: `/${ROUTE_SEGMENTS.FORBIDDEN}`,
 
     DASHBOARD: `/${ROUTE_SEGMENTS.DASHBOARD}`,

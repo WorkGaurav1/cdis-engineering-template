@@ -43,4 +43,19 @@ describe("authApi", () => {
 
     expect(apiClient.post).toHaveBeenCalledWith("/auth/logout");
   });
+
+  it("register posts the new account to /auth/register", async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ user: { id: "u1" } });
+
+    await authApi.register({ name: "New", email: "n@b.com", password: "password123" });
+
+    expect(apiClient.post).toHaveBeenCalledWith("/auth/register", { name: "New", email: "n@b.com", password: "password123" });
+  });
+
+  it("getOptions gets the public /auth/options", async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ selfRegistration: true });
+
+    await expect(authApi.getOptions()).resolves.toEqual({ selfRegistration: true });
+    expect(apiClient.get).toHaveBeenCalledWith("/auth/options");
+  });
 });

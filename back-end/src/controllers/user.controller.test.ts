@@ -5,11 +5,12 @@ import { createMockRequest, createMockResponse } from "../test-utils/expressMock
 vi.mock("../services/user.service.js", () => ({
   userService: {
     list: vi.fn(),
+    setRoles: vi.fn(),
   },
 }));
 
 const { userService } = await import("../services/user.service.js");
-const { listUsers } = await import("./user.controller.js");
+const { listUsers, setUserRoles } = await import("./user.controller.js");
 
 const pagination = { limit: 20, offset: 0 };
 
@@ -56,5 +57,19 @@ describe("listUsers", () => {
       success: true,
       data: { users: [], pagination: { limit: 20, offset: 0, total: 0 } },
     });
+  });
+});
+
+describe("setUserRoles", () => {
+  it("passes the acting user, the :id param, and the validated roles to the service", async () => {
+    const updated = { id: "u2", email: "b@example.com", name: "B", roles: ["manager"], permissions: ["users:read"] };
+    vi.mocked(userService.setRoles).mockResolvedValue(updated);
+    const res = createMockResponse();
+
+    await setUserRoles(createMockRequest({ userId: "u1", params: { id: "u2" }, body: { roles: ["manager"] } } as never), res);
+
+    expect(userService.setRoles).toHaveBeenCalledWith("u1", "u2", ["manager"]);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { user: updated } });
   });
 });

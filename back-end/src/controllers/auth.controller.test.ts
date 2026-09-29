@@ -11,11 +11,12 @@ vi.mock("../services/auth.service.js", () => ({
     refresh: vi.fn(),
     logout: vi.fn(),
     getCurrentUser: vi.fn(),
+    getOptions: vi.fn(),
   },
 }));
 
 const { authService } = await import("../services/auth.service.js");
-const { login, logout, me, refresh, register } = await import("./auth.controller.js");
+const { login, logout, me, options, refresh, register } = await import("./auth.controller.js");
 
 const safeUser = { id: "u1", email: "test@example.com", name: "Test User", roles: ["user"], permissions: [] };
 const authResult = { user: safeUser, accessToken: "access-token", refreshToken: "refresh-token" };
@@ -110,5 +111,16 @@ describe("me", () => {
 
     expect(authService.getCurrentUser).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ success: true, data: { user: safeUser } });
+  });
+});
+
+describe("options", () => {
+  it("returns the public auth options from the service", () => {
+    vi.mocked(authService.getOptions).mockReturnValue({ selfRegistration: false });
+    const res = createMockResponse();
+
+    options(createMockRequest(), res);
+
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { selfRegistration: false } });
   });
 });

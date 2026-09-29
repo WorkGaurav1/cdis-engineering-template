@@ -59,6 +59,18 @@ export const userRepository = {
     });
   },
 
+  /**
+   * Makes `roleIds` the user's complete set of roles, atomically — a
+   * failure between the delete and the create can't leave the user with
+   * no roles (which would look like a revoked account).
+   */
+  replaceRoles(userId: string, roleIds: string[]) {
+    return prisma.$transaction([
+      prisma.userRole.deleteMany({ where: { userId } }),
+      prisma.userRole.createMany({ data: roleIds.map((roleId) => ({ userId, roleId })) }),
+    ]);
+  },
+
   recordFailedLogin(userId: string, failedLoginAttempts: number, lockedUntil: Date | null) {
     return prisma.user.update({
       where: { id: userId },

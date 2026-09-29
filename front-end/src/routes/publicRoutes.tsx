@@ -1,6 +1,6 @@
 import type { RouteObject } from "react-router-dom";
 
-import { HomeRedirect, LoginPage, RedirectIfAuthenticated } from "@/auth";
+import { HomeRedirect, LoginPage, RedirectIfAuthenticated, RegisterPage } from "@/auth";
 import { PublicLayout } from "../layouts";
 import { ROUTE_SEGMENTS, ROUTES } from "./routeConfig";
 
@@ -18,6 +18,10 @@ export const publicRoutes: RouteObject[] = [
                     {
                         path: ROUTE_SEGMENTS.LOGIN,
                         element: <LoginPage />,
+                    },
+                    {
+                        path: ROUTE_SEGMENTS.REGISTER,
+                        element: <RegisterPage />,
                     },
                 ],
             },

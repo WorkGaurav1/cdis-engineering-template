@@ -74,6 +74,7 @@ jobs:
           ACCOUNT_LOCKOUT_MAX_ATTEMPTS=5
           ACCOUNT_LOCKOUT_DURATION_MINUTES=15
           TRUST_PROXY_HOPS=0
+          ALLOW_SELF_REGISTRATION=true
           EOF
 
       # Real production value (a relative path, resolved against
@@ -166,6 +167,8 @@ jobs:
           DB_PASSWORD=ci-only-db-password
           DB_ROOT_PASSWORD=ci-only-db-root-password
           JWT_ACCESS_SECRET=ci-only-secret-never-used-outside-github-actions
+          SEED_ADMIN_EMAIL=e2e-admin@example.com
+          SEED_ADMIN_PASSWORD=e2e-admin-password
           EOF
 
       - name: Bring up the stack

@@ -1,8 +1,8 @@
 import { DropdownMenu } from "radix-ui";
-import { ChevronDown, LogOut, Settings } from "lucide-react";
+import { ChevronDown, LogOut, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "@/auth";
+import { hasPermission, useAuth } from "@/auth";
 import { ROUTES } from "@/routes/routeConfig";
 
 function initials(name: string): string {
@@ -74,6 +74,19 @@ function ProfileMenu() {
                         <Settings aria-hidden="true" className="h-4 w-4 text-gray-500" />
                         Settings
                     </DropdownMenu.Item>
+
+                    {/* Users is deliberately not a sidebar item (see
+                        navigationConfig.ts); this is its entry point,
+                        shown only to people the route would let in. */}
+                    {hasPermission(user, "users:read") && (
+                        <DropdownMenu.Item
+                            onSelect={() => { navigate(ROUTES.USERS); }}
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-100 data-[highlighted]:bg-gray-100"
+                        >
+                            <Users aria-hidden="true" className="h-4 w-4 text-gray-500" />
+                            Users
+                        </DropdownMenu.Item>
+                    )}
 
                     <DropdownMenu.Separator className="my-1 h-px bg-gray-100" />
 

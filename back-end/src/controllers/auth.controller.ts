@@ -45,6 +45,10 @@ export async function logout(req: Request, res: Response): Promise<void> {
   sendSuccess(res, { message: "Logged out successfully." });
 }
 
+export function options(_req: Request, res: Response): void {
+  sendSuccess(res, authService.getOptions());
+}
+
 export function me(req: Request, res: Response): void {
   // req.user is guaranteed set here — requireAuth already loaded (and
   // existence-verified) it. No second DB round-trip needed.

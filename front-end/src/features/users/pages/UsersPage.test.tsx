@@ -4,17 +4,28 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PropsWithChildren, ReactElement } from "react";
 
+import { AuthContext, type AuthContextValue } from "@/auth/context/AuthContext";
+import type { User } from "@/auth/types";
+
 vi.mock("../api/userApi", () => ({
-  userApi: { list: vi.fn() },
+  userApi: { list: vi.fn(), listRoles: vi.fn(), setRoles: vi.fn() },
 }));
 
 const { userApi } = await import("../api/userApi");
 const { default: UsersPage } = await import("./UsersPage");
 
-function renderPage() {
+const manager: User = { id: "viewer", name: "Viewer", email: "v@example.com", roles: ["manager"], permissions: ["users:read"] };
+const admin: User = { ...manager, roles: ["admin"], permissions: ["users:read", "roles:manage"] };
+
+function renderPage(viewer: User = manager) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const auth: AuthContextValue = { user: viewer, isAuthenticated: true, loading: false, login: vi.fn(), logout: vi.fn() };
   function Wrapper({ children }: PropsWithChildren): ReactElement {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
+      </QueryClientProvider>
+    );
   }
   return render(<UsersPage />, { wrapper: Wrapper });
 }
@@ -75,5 +86,37 @@ describe("UsersPage", () => {
 
     expect(await screen.findByText("u2@example.com")).toBeInTheDocument();
     expect(userApi.list).toHaveBeenLastCalledWith({ limit: 20, offset: 20 });
+  });
+
+  it("offers no role editing to a viewer without roles:manage", async () => {
+    vi.mocked(userApi.list).mockResolvedValue({ users: [fakeUser("u1")], pagination: { limit: 20, offset: 0, total: 1 } });
+
+    renderPage(manager);
+
+    await screen.findByText("u1@example.com");
+    expect(screen.queryByRole("button", { name: /Edit roles/ })).not.toBeInTheDocument();
+  });
+
+  it("lets a roles:manage holder change someone's roles, then refetches the list", async () => {
+    const user = userEvent.setup();
+    vi.mocked(userApi.list).mockResolvedValue({ users: [fakeUser("u1")], pagination: { limit: 20, offset: 0, total: 1 } });
+    vi.mocked(userApi.listRoles).mockResolvedValue({
+      roles: [
+        { name: "manager", description: "Can view user accounts", permissions: ["users:read"] },
+        { name: "user", description: "Standard", permissions: [] },
+      ],
+    });
+    vi.mocked(userApi.setRoles).mockResolvedValue({ user: { ...fakeUser("u1"), roles: ["user", "manager"] } });
+
+    renderPage(admin);
+
+    await user.click(await screen.findByRole("button", { name: "Edit roles for User u1" }));
+    await user.click(await screen.findByRole("checkbox", { name: /^manager/i }));
+    await user.click(screen.getByRole("button", { name: "Save roles" }));
+
+    await vi.waitFor(() => { expect(userApi.setRoles).toHaveBeenCalledWith("u1", ["user", "manager"]); });
+    // Dialog closes and the page re-fetches to show the new roles.
+    await vi.waitFor(() => { expect(screen.queryByRole("dialog")).not.toBeInTheDocument(); });
+    expect(vi.mocked(userApi.list).mock.calls.length).toBeGreaterThan(1);
   });
 });

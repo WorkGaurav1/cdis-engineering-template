@@ -50,6 +50,19 @@ describe("createApp — routing and middleware wiring", () => {
     expect(res.status).toBe(401);
   });
 
+  it("mounts the role router under /api/v1/roles, gated by requireAuth", async () => {
+    const res = await request(app).get("/api/v1/roles");
+
+    expect(res.status).toBe(401);
+  });
+
+  it("serves the public auth options without authentication", async () => {
+    const res = await request(app).get("/api/v1/auth/options");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true, data: { selfRegistration: true } });
+  });
+
   it("mounts the demo router under /api/v1/demo, gated by requireAuth", async () => {
     const res = await request(app).get("/api/v1/demo/map/states");
 

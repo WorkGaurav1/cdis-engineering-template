@@ -13,13 +13,29 @@ export interface TestUser {
 }
 
 /**
- * Registers a fresh user directly against the backend API (there's no
- * register UI yet — see the LoginPage/register route split) so each
- * test run starts from a known, unique account instead of depending on
+ * The initial admin that scripts/e2e-up.sh seeds (SEED_ADMIN_* in
+ * compose/.env). Override both when pointing the suite at another
+ * environment via E2E_BASE_URL.
+ */
+export const seededAdmin: TestUser = {
+  email: process.env.E2E_ADMIN_EMAIL ?? "e2e-admin@example.com",
+  password: process.env.E2E_ADMIN_PASSWORD ?? "e2e-admin-password",
+  name: "Administrator",
+};
+
+/** A unique, never-before-used email for this run. */
+export function uniqueEmail(label: string): string {
+  return `e2e-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
+}
+
+/**
+ * Registers a fresh user directly against the backend API (fast setup —
+ * the Register *page* itself is covered in auth.spec.ts) so each test
+ * run starts from a known, unique account instead of depending on
  * seeded fixture data.
  */
 export async function registerTestUser(label: string): Promise<TestUser> {
-  const email = `e2e-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
+  const email = uniqueEmail(label);
   const user: TestUser = { email, password: "correct-horse-battery-staple", name: `E2E ${label}` };
 
   const response = await fetch(`${API_URL}/auth/register`, {
