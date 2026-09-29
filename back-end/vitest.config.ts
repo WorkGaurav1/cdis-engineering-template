@@ -20,6 +20,7 @@ export default defineConfig({
       BCRYPT_SALT_ROUNDS: "4",
       ACCOUNT_LOCKOUT_MAX_ATTEMPTS: "5",
       ACCOUNT_LOCKOUT_DURATION_MINUTES: "15",
+      TRUST_PROXY_HOPS: "0",
     },
     coverage: {
       provider: "v8",

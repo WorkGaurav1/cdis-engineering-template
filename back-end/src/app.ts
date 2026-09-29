@@ -16,6 +16,11 @@ import { healthRouter } from "./routes/health.routes.js";
 export function createApp() {
   const app = express();
 
+  // Derive req.ip from X-Forwarded-For only for the configured number of
+  // trusted proxy hops (Express "trust proxy" docs). Everything that keys
+  // on req.ip (both rate limiters, refresh-token createdByIp) depends on it.
+  app.set("trust proxy", env.trustProxyHops);
+
   // Security headers (OWASP Secure Headers Cheat Sheet baseline).
   app.use(helmet());
 

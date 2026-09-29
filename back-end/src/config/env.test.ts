@@ -68,6 +68,34 @@ describe("env — positive integer validation", () => {
   });
 });
 
+describe("env — non-negative integer validation (TRUST_PROXY_HOPS)", () => {
+  it("accepts 0, the value for a backend with no proxy in front of it", async () => {
+    vi.stubEnv("TRUST_PROXY_HOPS", "0");
+
+    const { env } = await importFresh();
+
+    expect(env.trustProxyHops).toBe(0);
+  });
+
+  it("throws when negative", async () => {
+    vi.stubEnv("TRUST_PROXY_HOPS", "-1");
+
+    await expect(importFresh()).rejects.toThrow(/Invalid TRUST_PROXY_HOPS/);
+  });
+
+  it("throws when not an integer (e.g. Express's boolean `true`, which trusts any spoofed hop)", async () => {
+    vi.stubEnv("TRUST_PROXY_HOPS", "true");
+
+    await expect(importFresh()).rejects.toThrow(/Invalid TRUST_PROXY_HOPS/);
+  });
+
+  it("throws when missing", async () => {
+    vi.stubEnv("TRUST_PROXY_HOPS", "");
+
+    await expect(importFresh()).rejects.toThrow(/Missing required environment variable: TRUST_PROXY_HOPS/);
+  });
+});
+
 describe("env — NODE_ENV validation", () => {
   it("throws when NODE_ENV is not one of the recognized environments", async () => {
     vi.stubEnv("NODE_ENV", "staging-typo");

@@ -48,6 +48,17 @@ function requirePositiveInt(name: string): number {
   return parsed;
 }
 
+function requireNonNegativeInt(name: string): number {
+  const raw = requireEnv(name);
+  const parsed = Number(raw);
+
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`[Configuration Error] Invalid ${name}: "${raw}" must be a non-negative integer`);
+  }
+
+  return parsed;
+}
+
 const nodeEnv = process.env["NODE_ENV"] ?? "development";
 
 if (!VALID_ENVIRONMENTS.includes(nodeEnv as AppEnvironment)) {
@@ -61,6 +72,14 @@ export const env = {
   port: requirePort("PORT"),
   corsOrigin: requireEnv("CORS_ORIGIN"),
   databaseUrl: requireEnv("DATABASE_URL"),
+  /**
+   * How many reverse proxies sit between the client and this process.
+   * 0 when the backend is hit directly (local dev); 1 behind the
+   * deployment/ Apache proxy. Too low and every client shares the
+   * proxy's IP (one rate-limit bucket for everyone); too high and a
+   * client can spoof its IP via X-Forwarded-For.
+   */
+  trustProxyHops: requireNonNegativeInt("TRUST_PROXY_HOPS"),
 
   auth: {
     jwtAccessSecret: requireEnv("JWT_ACCESS_SECRET"),

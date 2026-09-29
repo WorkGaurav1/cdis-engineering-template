@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 
 // This is a plain unit test, not *.integration.test.ts — it must never
@@ -81,5 +81,41 @@ describe("createApp — routing and middleware wiring", () => {
     const res = await request(app).get("/health");
 
     expect(res.headers).toHaveProperty("ratelimit-limit");
+  });
+});
+
+describe("createApp — reverse proxy trust (TRUST_PROXY_HOPS)", () => {
+  // A fresh app per test: each createApp() builds its own rate limiter
+  // with its own in-memory counters, so buckets don't leak between tests.
+  async function freshApp() {
+    vi.resetModules();
+    const mod = await import("./app.js");
+    return mod.createApp();
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("behind one proxy, gives each real client its own rate-limit bucket", async () => {
+    vi.stubEnv("TRUST_PROXY_HOPS", "1");
+    const proxied = await freshApp();
+
+    await request(proxied).get("/health").set("X-Forwarded-For", "203.0.113.10");
+    const second = await request(proxied).get("/health").set("X-Forwarded-For", "203.0.113.20");
+
+    // Without trust proxy, both requests share the proxy's own IP and
+    // the second client would already see one request used (limit - 2).
+    expect(second.headers["ratelimit-remaining"]).toBe(String(Number(second.headers["ratelimit-limit"]) - 1));
+  });
+
+  it("with no proxy (0 hops), ignores a client-supplied X-Forwarded-For so it can't dodge the limiter", async () => {
+    vi.stubEnv("TRUST_PROXY_HOPS", "0");
+    const direct = await freshApp();
+
+    await request(direct).get("/health").set("X-Forwarded-For", "203.0.113.10");
+    const second = await request(direct).get("/health").set("X-Forwarded-For", "203.0.113.20");
+
+    expect(second.headers["ratelimit-remaining"]).toBe(String(Number(second.headers["ratelimit-limit"]) - 2));
   });
 });
