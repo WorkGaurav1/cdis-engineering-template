@@ -23,7 +23,7 @@ jobs:
         ports:
           - 3308:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -pcdis_root_dev_password"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pcdis_root_dev_password"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
@@ -96,16 +96,16 @@ jobs:
       # fully containerized MySQL via deployment/compose/compose.yaml,
       # so there's no need to also prep a "cdis" dev database on this
       # services: container.
-      # MySQL's official image only grants MYSQL_USER privileges on
-      # MYSQL_DATABASE ("cdis") — cdis_test, created afterward, needs
-      # its own explicit GRANT, or the `cdis` user gets P1010 "access
-      # denied" the moment anything touches it.
+      # The CREATE/GRANT mirrors deployment/compose/mysql-init/ (which
+      # local dev gets automatically) — a services: container starts
+      # before checkout, so it can't mount that script itself. Without
+      # the GRANT the `cdis` user gets P1010 "access denied".
+      # db:test:prepare is the exact command developers run locally.
       - name: Prepare test database
         working-directory: back-end
         run: |
-          mysql -h127.0.0.1 -P3308 -uroot -pcdis_root_dev_password -e "CREATE DATABASE IF NOT EXISTS cdis_test; GRANT ALL PRIVILEGES ON cdis_test.* TO 'cdis'@'%'; FLUSH PRIVILEGES;"
-          DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma migrate deploy
-          DATABASE_URL="mysql://cdis:cdis_dev_password@localhost:3308/cdis_test" npx prisma db seed
+          mysql -h127.0.0.1 -P3308 -uroot -pcdis_root_dev_password < ../deployment/compose/mysql-init/01-test-database.sql
+          npm run db:test:prepare
 
       #  lint 
       - name: Lint backend

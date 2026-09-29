@@ -41,5 +41,8 @@ USER nginx
 
 EXPOSE 80
 
+# 127.0.0.1, not localhost: Alpine resolves localhost to ::1 first, and
+# nginx.conf listens on IPv4 only, so "localhost" is refused and the
+# container would report unhealthy forever despite serving fine.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget -q --spider http://localhost/health || exit 1
+  CMD wget -q --spider http://127.0.0.1/health || exit 1

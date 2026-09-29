@@ -1,5 +1,7 @@
 import { defineConfig } from "vitest/config";
 
+import { TEST_DATABASE_URL } from "./src/test-utils/testDatabase.js";
+
 export default defineConfig({
   test: {
     environment: "node",
@@ -11,7 +13,7 @@ export default defineConfig({
       NODE_ENV: "test",
       PORT: "4001",
       CORS_ORIGIN: "http://localhost:5173",
-      DATABASE_URL: "mysql://cdis:cdis_dev_password@localhost:3308/cdis_test",
+      DATABASE_URL: TEST_DATABASE_URL,
       JWT_ACCESS_SECRET: "test-only-secret-never-used-outside-the-test-suite",
       JWT_ACCESS_EXPIRES_IN: "15m",
       REFRESH_TOKEN_EXPIRES_IN_DAYS: "7",
