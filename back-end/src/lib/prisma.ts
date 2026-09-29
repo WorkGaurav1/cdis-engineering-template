@@ -1,7 +1,6 @@
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-
-import { PrismaClient } from "../../generated/prisma/client.js";
+import type { PrismaClient } from "../../generated/prisma/client.js";
 import { env } from "../config/index.js";
+import { createPrismaClient } from "./prismaClientFactory.js";
 
 /**
  * Prisma Client singleton.
@@ -15,13 +14,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaMariaDb(env.databaseUrl);
-
-  return new PrismaClient({ adapter });
-}
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+export const prisma = globalForPrisma.prisma ?? createPrismaClient(env.databaseUrl);
 
 if (env.nodeEnv !== "production") {
   globalForPrisma.prisma = prisma;

@@ -49,6 +49,28 @@ services:
     # No `ports:` — only the reverse proxy talks to this, over the
     # internal Docker network (service name `backend`).
 
+  # One-off job: apply migrations + seed against the *new* image before
+  # it serves traffic. Never started by `up` (the `tools` profile) —
+  # scripts/deploy.sh runs it explicitly and aborts the deploy, with the
+  # old version still running, if it fails.
+  migrate:
+    image: ghcr.io/workgaurav1/cdis-backend:${BACKEND_VERSION:?BACKEND_VERSION is required — e.g. a commit SHA, never left as :latest}
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: mysql://cdis:${DB_PASSWORD}@mysql:3306/cdis?allowPublicKeyRetrieval=true
+      BCRYPT_SALT_ROUNDS: 12
+      # Optional initial admin (see env/production.env.example). Both
+      # unset = no admin is created. Only this one-off job ever sees
+      # these — the long-running backend service never does.
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-}
+    command: ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   frontend:
     image: ghcr.io/workgaurav1/cdis-frontend:${FRONTEND_VERSION:?FRONTEND_VERSION is required — e.g. a commit SHA, never left as :latest}
     restart: unless-stopped

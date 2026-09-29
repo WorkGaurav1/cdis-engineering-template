@@ -28,11 +28,9 @@ if [ "$HEALTHY" -ne 1 ]; then
 fi
 
 echo "==> Applying migrations and seed data..."
-# Runs as root: the runtime image's /app is intentionally not
-# writable by the non-root app user, and the seed command needs to
-# write a throwaway .env file (see cdis-backend's known prisma.config.ts
-# --env-file requirement) from the container's already-set environment.
-docker compose -f compose.yaml exec -u root backend sh -c \
-  'env > .env && npx prisma migrate deploy && npx prisma db seed'
+# The one-off `migrate` service (tools profile): same image as backend,
+# non-root, reads DATABASE_URL/SEED_ADMIN_* from its own environment —
+# no .env file inside the container, no root.
+docker compose -f compose.yaml run --rm migrate
 
 echo "==> Stack is up: http://localhost:8080"

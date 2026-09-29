@@ -55,6 +55,28 @@ services:
     # No `ports:` here either — only the reverse proxy talks to this,
     # over the internal Docker network (service name `backend`).
 
+  # One-off job: apply migrations + seed. Same image as `backend`, but
+  # never started by `up` (the `tools` profile) — scripts/e2e-up.sh runs
+  # it explicitly: docker compose -f compose.yaml run --rm migrate
+  migrate:
+    build:
+      context: ${BACKEND_BUILD_CONTEXT:-../../cdis-backend}
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: mysql://cdis:${DB_PASSWORD}@mysql:3306/cdis?allowPublicKeyRetrieval=true
+      BCRYPT_SALT_ROUNDS: 12
+      # Optional initial admin (see env/production.env.example). Both
+      # unset = no admin is created. Only this one-off job ever sees
+      # these — the long-running backend service never does.
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-}
+    command: ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   frontend:
     build:
       context: ${FRONTEND_BUILD_CONTEXT:-../../cdis-frontend}

@@ -1,10 +1,21 @@
 /**
- * Seeds baseline roles/permissions plus synthetic demo data for the
- * template's map/chart/table gallery pages. Idempotent (safe to re-run)
- * — uses upsert throughout, and clears+recreates child rows for demo
- * datasets so re-seeding never duplicates points/rows.
+ * Seeds baseline roles/permissions, an optional initial admin
+ * (SEED_ADMIN_* — see src/config/seedEnv.ts), plus synthetic demo data
+ * for the template's map/chart/table gallery pages. Idempotent (safe to
+ * re-run, and deploy.sh re-runs it on every deploy) — uses upsert
+ * throughout, and clears+recreates child rows for demo datasets so
+ * re-seeding never duplicates points/rows.
+ *
+ * Needs only DATABASE_URL (plus SEED_ADMIN_* and BCRYPT_SALT_ROUNDS when
+ * creating an admin) — not the HTTP server's config.
  */
-import { prisma } from "../src/lib/prisma.js";
+import type { Prisma } from "../generated/prisma/client.js";
+import { loadSeedEnv } from "../src/config/seedEnv.js";
+import { createPrismaClient } from "../src/lib/prismaClientFactory.js";
+import { seedInitialAdmin } from "../src/seed/initialAdmin.js";
+
+const seedEnv = loadSeedEnv();
+const prisma = createPrismaClient(seedEnv.databaseUrl);
 
 const PERMISSIONS = [
   { key: "users:read", description: "View user accounts" },
@@ -241,7 +252,7 @@ interface TableDatasetSeed {
   slug: string;
   title: string;
   description: string;
-  rows: Record<string, unknown>[];
+  rows: Prisma.InputJsonObject[];
 }
 
 const ORDER_STATUSES = ["Pending", "Shipped", "Delivered", "Cancelled"];
@@ -311,8 +322,24 @@ async function seedDemoTableDatasets(): Promise<void> {
   console.info(`Seed: ${String(TABLE_DATASETS.length)} demo table datasets up to date.`);
 }
 
+async function seedAdmin(): Promise<void> {
+  if (!seedEnv.initialAdmin) {
+    console.info("Seed: no SEED_ADMIN_EMAIL set, skipping initial admin.");
+    return;
+  }
+
+  const outcome = await seedInitialAdmin(prisma, seedEnv.initialAdmin);
+  const messages = {
+    created: "created with the admin role",
+    promoted: "already existed; admin role granted (password left unchanged)",
+    unchanged: "already an admin; nothing to do (password left unchanged)",
+  };
+  console.info(`Seed: initial admin ${seedEnv.initialAdmin.email} ${messages[outcome]}.`);
+}
+
 async function main(): Promise<void> {
   await seedRolesAndPermissions();
+  await seedAdmin();
   await seedDemoStateMetrics();
   await seedDemoChartDatasets();
   await seedDemoTableDatasets();
