@@ -20,7 +20,7 @@ back-end/
 deployment/
 docs/
 scripts/        # export-to-repos.sh (CDIS's sibling-repo split)
-.github/        # ci.yml (checks + image publishing), deploy.yml (CD), dependabot
+.github/        # ci.yml (checks + image publishing), deploy.yml (CD), dependabot.yml (security updates only)
 README.md
 ```
 

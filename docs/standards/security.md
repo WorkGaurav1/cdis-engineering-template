@@ -41,6 +41,15 @@ The security controls in place today, and where to find/modify each one.
 - **Refresh token reuse detection**: presenting an already-rotated refresh token revokes every session for that user (see [Authentication](../architecture/authentication.md)).
 - **Authorization always checks permission keys, never role names** in guards (see [Authorization](../architecture/authorization.md)).
 
+### Dependency updates
+
+A dependency is upgraded only when a published advisory affects the version we ship. Two things enforce that:
+
+- **CI** runs `npm audit --audit-level=high` for `back-end/`, `front-end/` and `deployment/` on every push and PR — a high or critical advisory fails the build.
+- **Dependabot** (`.github/dependabot.yml`) is set to security updates only. When an advisory is published, it opens **one PR per directory** with every fix for that directory — no PR on a schedule, no version bumps. This needs **Dependabot alerts** and **Dependabot security updates** switched on in the repo's Settings → Code security; without them the config does nothing.
+
+Fixing an advisory by hand (or reviewing Dependabot's PR): check the advisory's first patched version (`gh api /advisories/<GHSA-id>`), then `npm audit fix` — never `--force`, which is allowed to jump major versions. If the vulnerable package is pinned by another package (e.g. `mariadb` by `@prisma/adapter-mariadb`), raise its entry in `overrides` in `package.json` to the patched version instead. Major-version upgrades are their own deliberate, reviewed change, never part of a security fix.
+
 ---
 
 ## Common Tasks
